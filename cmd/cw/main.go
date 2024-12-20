@@ -5,6 +5,8 @@ import (
 	"CW_DB_v2/internal/config"
 	"log/slog"
 	"os"
+	"os/signal"
+	"syscall"
 )
 
 func main() {
@@ -14,13 +16,23 @@ func main() {
 
 	log.Info("start app", slog.Any("cfg", cfg), slog.Int("port", cfg.GRPC.Port))
 
-	//TODO: init app
-
 	application := app.New(log, cfg.GRPC.Port, cfg.StoragePath, cfg.TokenTTL)
 	//hgjgjgh
-	application.GRPCServer.MustRun()
+	go application.GRPCServer.MustRun()
 
+	//TODO: init app
 	//TODO: init server
+
+	stop := make(chan os.Signal, 1)
+	signal.Notify(stop, syscall.SIGTERM, syscall.SIGINT)
+
+	sign := <-stop
+
+	log.Info("stopping app", slog.String("signal", sign.String()))
+
+	application.GRPCServer.Stop()
+
+	log.Info("application stopped")
 }
 
 func setupLogger() *slog.Logger {
