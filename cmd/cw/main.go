@@ -17,7 +17,7 @@ func main() {
 	log.Info("start app", slog.Any("cfg", cfg), slog.Int("port", cfg.GRPC.Port))
 
 	application := app.New(log, cfg.GRPC.Port, cfg.StoragePath, cfg.TokenTTL)
-	//hgjgjgh
+
 	go application.GRPCServer.MustRun()
 
 	//TODO: init app
