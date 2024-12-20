@@ -17,7 +17,7 @@ func main() {
 	//TODO: init app
 
 	application := app.New(log, cfg.GRPC.Port, cfg.StoragePath, cfg.TokenTTL)
-
+	//hgjgjgh
 	application.GRPCServer.MustRun()
 
 	//TODO: init server
