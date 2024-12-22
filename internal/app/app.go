@@ -2,6 +2,8 @@ package app
 
 import (
 	grpcapp "CW_DB_v2/internal/app/grpc"
+	"CW_DB_v2/internal/services/cw"
+	"CW_DB_v2/internal/storage/sqlite"
 	"log/slog"
 	"time"
 )
@@ -11,11 +13,17 @@ type App struct {
 }
 
 func New(log *slog.Logger, grpcPort int, storagePath string, tokenTTl time.Duration) *App {
-	//TODO:init storage
+
+	storage, err := sqlite.New(storagePath)
+	if err != nil {
+		panic(err)
+	}
+
+	cwService := cw.New(log, storage, storage, storage, tokenTTl)
 
 	//TODO init cw service
 
-	grpcApp := grpcapp.New(log, grpcPort)
+	grpcApp := grpcapp.New(log, cwService, grpcPort)
 
 	return &App{GRPCServer: grpcApp}
 }

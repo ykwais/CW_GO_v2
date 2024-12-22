@@ -3,6 +3,7 @@ package cw
 import (
 	"CW_DB_v2/internal/domain/models"
 	"CW_DB_v2/internal/storage"
+	"CW_DB_v2/lib/jwt"
 	"context"
 	"errors"
 	"fmt"
@@ -15,8 +16,8 @@ type CW struct {
 	log         *slog.Logger
 	usrSaver    UserSaver
 	usrProvider UserProvider
-	//appProvider AppProvider
-	tokenTTl time.Duration
+	appProvider AppProvider
+	tokenTTl    time.Duration
 }
 
 type UserSaver interface {
@@ -30,23 +31,25 @@ type UserProvider interface {
 
 var (
 	ErrInvalidCredentials = errors.New("invalid credentials")
+	ErrInvalidAppID       = errors.New("invalid app id")
+	ErrUserExists         = errors.New("user already exists")
 )
 
-//type AppProvider interface {
-//	App(ctx context.Context, appId int) (models.App, error)
-//}
+type AppProvider interface {
+	App(ctx context.Context, appId int) (models.App, error)
+}
 
-func New(log *slog.Logger, userSaver UserSaver, usrProvider UserProvider /* appProvider AppProvider,*/, tokenTTl time.Duration) *CW {
+func New(log *slog.Logger, userSaver UserSaver, usrProvider UserProvider, appProvider AppProvider, tokenTTl time.Duration) *CW {
 	return &CW{
 		log:         log,
 		usrSaver:    userSaver,
 		usrProvider: usrProvider,
-		//appProvider: appProvider,
-		tokenTTl: tokenTTl,
+		appProvider: appProvider,
+		tokenTTl:    tokenTTl,
 	}
 }
 
-func (cw *CW) Login(ctx context.Context, login string, password string) (string, error) {
+func (cw *CW) Login(ctx context.Context, login string, password string, appID int) (string, error) {
 	const op = "cw.Login"
 
 	log := cw.log.With(slog.String("op", op), slog.String("login", login))
@@ -71,6 +74,21 @@ func (cw *CW) Login(ctx context.Context, login string, password string) (string,
 		return "", fmt.Errorf("%s: %w", op, ErrInvalidCredentials)
 	}
 
+	app, err := cw.appProvider.App(ctx, appID)
+	if err != nil {
+		return "", fmt.Errorf("%s: %w", op, err)
+	}
+
+	log.Info("user logged in successfully", slog.String("login", login))
+
+	token, err := jwt.NewToken(user, app, cw.tokenTTl)
+	if err != nil {
+		cw.log.Error("failed to create token", slog.String("login", login), slog.String("error", err.Error()))
+		return "", fmt.Errorf("%s: %w", op, err)
+	}
+
+	return token, nil
+
 }
 
 func (cw *CW) RegisterNewUser(ctx context.Context, login string, password string) (int64, error) {
@@ -88,6 +106,11 @@ func (cw *CW) RegisterNewUser(ctx context.Context, login string, password string
 
 	id, err := cw.usrSaver.SaveUser(ctx, login, passHash)
 	if err != nil {
+		if errors.Is(err, storage.ErrUserExists) {
+			log.Warn("user already exists", slog.String("login", login), slog.String("error", err.Error()))
+
+			return 0, fmt.Errorf("%s : %w", op, ErrUserExists)
+		}
 		log.Error("failed to save user", slog.String("error", err.Error()))
 		return 0, fmt.Errorf("%s : %w", op, err)
 	}
@@ -99,5 +122,23 @@ func (cw *CW) RegisterNewUser(ctx context.Context, login string, password string
 }
 
 func (cw *CW) IsAdmin(ctx context.Context, userID int64) (bool, error) {
-	panic("implement me")
+	const op = "cw.IsAdmin"
+
+	log := cw.log.With(slog.String("op", op), slog.Int64("user_id", userID))
+	log.Info("checking if user is admin")
+
+	isAdmin, err := cw.usrProvider.isAdmin(ctx, userID)
+	if err != nil {
+		if errors.Is(err, storage.ErrAppNotFound) {
+			log.Warn("user not found", slog.Int64("ussrId", userID))
+
+			return false, fmt.Errorf("%s: %w", op, ErrInvalidAppID)
+		}
+		return false, fmt.Errorf("%s : %w", op, err)
+	}
+
+	log.Info("checking if user is admin", slog.Bool("isAdmin", isAdmin))
+
+	return isAdmin, nil
+
 }

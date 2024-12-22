@@ -1,7 +1,10 @@
-package cw
+package cwgrpc
 
 import (
+	"CW_DB_v2/internal/services/cw"
+	"CW_DB_v2/internal/storage"
 	"context"
+	"errors"
 	cwv1 "github.com/ykwais/CW_GO_protos/gen/go/cw"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -38,7 +41,9 @@ func (s *serverAPI) Login(ctx context.Context, req *cwv1.LoginRequest) (*cwv1.Lo
 
 	token, err := s.cw.Login(ctx, req.GetLogin(), req.GetPassword())
 	if err != nil {
-		// TODO:...
+		if errors.Is(err, cw.ErrInvalidCredentials) {
+			return nil, status.Error(codes.InvalidArgument, "invalid login or password")
+		}
 		return nil, status.Error(codes.Internal, "internal error")
 	}
 
@@ -55,7 +60,9 @@ func (s *serverAPI) Register(ctx context.Context, req *cwv1.RegisterRequest) (*c
 
 	userID, err := s.cw.Register(ctx, req.GetLogin(), req.GetPassword())
 	if err != nil {
-		//TODO: ...
+		if errors.Is(err, cw.ErrUserExists) {
+			return nil, status.Error(codes.AlreadyExists, "user already exists")
+		}
 		return nil, status.Error(codes.Internal, "internal error")
 	}
 
@@ -71,7 +78,9 @@ func (s *serverAPI) isAdmin(ctx context.Context, req *cwv1.IsAdminRequest) (*cwv
 
 	isAdmin, err := s.cw.isAdmin(ctx, req.GetUserId())
 	if err != nil {
-		//TODO: ...
+		if errors.Is(err, storage.ErrUserNotFound) {
+			return nil, status.Error(codes.NotFound, "user not found")
+		}
 		return nil, status.Error(codes.Internal, "internal error")
 	}
 
