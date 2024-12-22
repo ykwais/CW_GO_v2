@@ -10,27 +10,24 @@ import (
 )
 
 func main() {
-	cfg := config.MustLoad()
+	cfg := config.MustLoad() //читаем файл настройщик
 
-	log := setupLogger()
+	log := setupLogger() //подключаем логгер
 
 	log.Info("start app", slog.Any("cfg", cfg), slog.Int("port", cfg.GRPC.Port))
 
-	application := app.New(log, cfg.GRPC.Port, cfg.StoragePath, cfg.TokenTTL)
+	application := app.New(log, cfg.GRPC.Port, cfg.StoragePath, cfg.TokenTTL) //готовый сервер с логгером и сервисом
 
-	go application.GRPCServer.MustRun()
+	go application.GRPCServer.MustRun() //если не смогли запуститься - паникуем
 
-	//TODO: init app
-	//TODO: init server
-
-	stop := make(chan os.Signal, 1)
+	stop := make(chan os.Signal, 1) //создаем канал слушателя сигналов системы
 	signal.Notify(stop, syscall.SIGTERM, syscall.SIGINT)
 
-	sign := <-stop
+	sign := <-stop //ловим сигналы системы
 
 	log.Info("stopping app", slog.String("signal", sign.String()))
 
-	application.GRPCServer.Stop()
+	application.GRPCServer.Stop() //останавливаем сервер
 
 	log.Info("application stopped")
 }

@@ -15,7 +15,7 @@ import (
 type CW interface {
 	Login(ctx context.Context, login, password string) (token string, err error)
 	Register(ctx context.Context, login, password string) (userID int64, err error)
-	isAdmin(ctx context.Context, userID int64) (bool, error)
+	IsAdmin(ctx context.Context, userID int64) (bool, error)
 }
 
 type serverAPI struct {
@@ -24,14 +24,19 @@ type serverAPI struct {
 	cw CW
 }
 
-func RegisterServerAPI(gRPC *grpc.Server, logger *slog.Logger, serv CW) {
+func RegisterServerAPI(gRPC *grpc.Server, logger *slog.Logger, service CW) {
 	cwv1.RegisterServiceServer(gRPC, &serverAPI{
 		UnimplementedServiceServer: cwv1.UnimplementedServiceServer{},
 		Logger:                     logger,
-		cw:                         serv,
-	})
+		cw:                         service,
+	}) // тут происходит связывание сервера и его реализации
 
 }
+
+/*
+	ниже представлены обработчики запросов, поступающие на сервер. Каждый из обработчиков отвечает за валидацию, вызов реализации метода - Login например
+	и посылку ответа на клиент
+*/
 
 func (s *serverAPI) Login(ctx context.Context, req *cwv1.LoginRequest) (*cwv1.LoginResponse, error) {
 	s.Logger.Info("on LOGIN request get: ", slog.String("login", req.Login), slog.String("password", req.Password))
@@ -76,7 +81,7 @@ func (s *serverAPI) isAdmin(ctx context.Context, req *cwv1.IsAdminRequest) (*cwv
 		return nil, status.Error(codes.InvalidArgument, "user ID cannot be 0")
 	}
 
-	isAdmin, err := s.cw.isAdmin(ctx, req.GetUserId())
+	isAdmin, err := s.cw.IsAdmin(ctx, req.GetUserId())
 	if err != nil {
 		if errors.Is(err, storage.ErrUserNotFound) {
 			return nil, status.Error(codes.NotFound, "user not found")

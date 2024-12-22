@@ -9,8 +9,8 @@ import (
 
 type Config struct {
 	Env         string        `yaml:"env" env-default:"local"`
-	StoragePath string        `yaml:"storage_path" env-required:"true"`
-	TokenTTL    time.Duration `yaml:"token_ttl" env-required:"true"`
+	StoragePath string        `yaml:"storage_path" env-required:"true"` //изменить
+	TokenTTL    time.Duration `yaml:"token_ttl" env-required:"true"`    ///убрть
 	GRPC        GRPCConfig    `yaml:"grpc"`
 }
 
@@ -46,7 +46,7 @@ func fetchConfigPath() string {
 	flag.Parse()
 
 	if res == "" {
-		res = "C:\\Users\\fedor\\GolandProjects\\CW_DB_v2\\config\\local.yaml"
+		res = "config/local.yaml"
 	}
 
 	return res

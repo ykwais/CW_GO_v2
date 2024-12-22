@@ -16,8 +16,8 @@ type CW struct {
 	log         *slog.Logger
 	usrSaver    UserSaver
 	usrProvider UserProvider
-	appProvider AppProvider
-	tokenTTl    time.Duration
+	appProvider AppProvider   //это тут точно не нужёно
+	tokenTTl    time.Duration //это тоже
 }
 
 type UserSaver interface {
@@ -26,7 +26,7 @@ type UserSaver interface {
 
 type UserProvider interface {
 	User(ctx context.Context, login string) (models.User, error)
-	isAdmin(ctx context.Context, userID int64) (bool, error)
+	IsAdmin(ctx context.Context, userID int64) (bool, error)
 }
 
 var (
@@ -49,7 +49,11 @@ func New(log *slog.Logger, userSaver UserSaver, usrProvider UserProvider, appPro
 	}
 }
 
-func (cw *CW) Login(ctx context.Context, login string, password string, appID int) (string, error) {
+/*
+	ниже представлены уже сама реализация обработки запроса, то есть мы получаем входные данные из реквеста и перенаправляем их в сущность, которая взаимодействует с бд
+*/
+
+func (cw *CW) Login(ctx context.Context, login string, password string /*, appID int*/) (string, error) {
 	const op = "cw.Login"
 
 	log := cw.log.With(slog.String("op", op), slog.String("login", login))
@@ -74,14 +78,14 @@ func (cw *CW) Login(ctx context.Context, login string, password string, appID in
 		return "", fmt.Errorf("%s: %w", op, ErrInvalidCredentials)
 	}
 
-	app, err := cw.appProvider.App(ctx, appID)
+	/*app, err := cw.appProvider.App(ctx, appID)
 	if err != nil {
 		return "", fmt.Errorf("%s: %w", op, err)
-	}
+	}*/
 
 	log.Info("user logged in successfully", slog.String("login", login))
 
-	token, err := jwt.NewToken(user, app, cw.tokenTTl)
+	token, err := jwt.NewToken(user /* app, */, cw.tokenTTl)
 	if err != nil {
 		cw.log.Error("failed to create token", slog.String("login", login), slog.String("error", err.Error()))
 		return "", fmt.Errorf("%s: %w", op, err)
@@ -89,6 +93,10 @@ func (cw *CW) Login(ctx context.Context, login string, password string, appID in
 
 	return token, nil
 
+}
+
+func (cw *CW) Register(ctx context.Context, username string, password string) (int64, error) {
+	return cw.RegisterNewUser(ctx, username, password)
 }
 
 func (cw *CW) RegisterNewUser(ctx context.Context, login string, password string) (int64, error) {
@@ -127,7 +135,7 @@ func (cw *CW) IsAdmin(ctx context.Context, userID int64) (bool, error) {
 	log := cw.log.With(slog.String("op", op), slog.Int64("user_id", userID))
 	log.Info("checking if user is admin")
 
-	isAdmin, err := cw.usrProvider.isAdmin(ctx, userID)
+	isAdmin, err := cw.usrProvider.IsAdmin(ctx, userID)
 	if err != nil {
 		if errors.Is(err, storage.ErrAppNotFound) {
 			log.Warn("user not found", slog.Int64("ussrId", userID))

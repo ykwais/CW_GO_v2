@@ -14,12 +14,12 @@ type App struct {
 	port       int
 }
 
-func New(log *slog.Logger, serv cwgrpc.CW, port int) *App {
-	gRPCServer := grpc.NewServer()
+func New(log *slog.Logger, service cwgrpc.CW, port int) *App {
+	gRPCServer := grpc.NewServer() //библиотека создает сервер на основе прото
 
-	cwgrpc.RegisterServerAPI(gRPCServer, log, serv)
+	cwgrpc.RegisterServerAPI(gRPCServer, log, service) //тут мы говорим, что север выполняет то, что находится в service
 
-	return &App{log, gRPCServer, port}
+	return &App{log, gRPCServer, port} //возврат сбитого приложения, где уже есть логгер, сервер grpc c реализацией сервиса и номер порта
 }
 
 func (app *App) MustRun() {

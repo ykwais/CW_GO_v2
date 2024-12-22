@@ -64,7 +64,7 @@ func (s *Storage) User(ctx context.Context, login string) (models.User, error) {
 	row := stmt.QueryRowContext(ctx, login)
 
 	var user models.User
-	err = row.Scan(&user.ID, &user.Login, &user.Pass_hash)
+	err = row.Scan(&user.Login, &user.Pass_hash)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return models.User{}, fmt.Errorf("%s : %w", op, storage.ErrUserNotFound)
@@ -99,7 +99,7 @@ func (s *Storage) IsAdmin(ctx context.Context, userID int64) (bool, error) {
 
 }
 
-func (s *Storage) App(ctx context.Context, appID int64) (models.App, error) {
+func (s *Storage) App(ctx context.Context, appID int) (models.App, error) {
 	const op = "storage.sqlite.App"
 
 	stmt, err := s.db.Prepare("SELECT id, name, secret FROM apps WHERE id = ?")
