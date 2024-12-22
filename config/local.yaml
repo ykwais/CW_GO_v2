@@ -1,7 +1,6 @@
 
 env: "local"
-storage_path: "./storage/cw.db"
-token_ttl: 1h
+db_container_path: "host=localhost port=5432 user=ykwais password=1111 dbname=afdb sslmode=disable search_path=cw_test"
 grpc:
   port: 8080
   timeout: 10h

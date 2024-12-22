@@ -9,15 +9,12 @@ import (
 	"fmt"
 	"golang.org/x/crypto/bcrypt"
 	"log/slog"
-	"time"
 )
 
 type CW struct {
 	log         *slog.Logger
 	usrSaver    UserSaver
 	usrProvider UserProvider
-	appProvider AppProvider   //это тут точно не нужёно
-	tokenTTl    time.Duration //это тоже
 }
 
 type UserSaver interface {
@@ -39,13 +36,11 @@ type AppProvider interface {
 	App(ctx context.Context, appId int) (models.App, error)
 }
 
-func New(log *slog.Logger, userSaver UserSaver, usrProvider UserProvider, appProvider AppProvider, tokenTTl time.Duration) *CW {
+func New(log *slog.Logger, userSaver UserSaver, usrProvider UserProvider) *CW {
 	return &CW{
 		log:         log,
 		usrSaver:    userSaver,
 		usrProvider: usrProvider,
-		appProvider: appProvider,
-		tokenTTl:    tokenTTl,
 	}
 }
 
@@ -85,7 +80,7 @@ func (cw *CW) Login(ctx context.Context, login string, password string /*, appID
 
 	log.Info("user logged in successfully", slog.String("login", login))
 
-	token, err := jwt.NewToken(user /* app, */, cw.tokenTTl)
+	token, err := jwt.NewToken(user /* app, */)
 	if err != nil {
 		cw.log.Error("failed to create token", slog.String("login", login), slog.String("error", err.Error()))
 		return "", fmt.Errorf("%s: %w", op, err)
@@ -132,21 +127,6 @@ func (cw *CW) RegisterNewUser(ctx context.Context, login string, password string
 func (cw *CW) IsAdmin(ctx context.Context, userID int64) (bool, error) {
 	const op = "cw.IsAdmin"
 
-	log := cw.log.With(slog.String("op", op), slog.Int64("user_id", userID))
-	log.Info("checking if user is admin")
-
-	isAdmin, err := cw.usrProvider.IsAdmin(ctx, userID)
-	if err != nil {
-		if errors.Is(err, storage.ErrAppNotFound) {
-			log.Warn("user not found", slog.Int64("ussrId", userID))
-
-			return false, fmt.Errorf("%s: %w", op, ErrInvalidAppID)
-		}
-		return false, fmt.Errorf("%s : %w", op, err)
-	}
-
-	log.Info("checking if user is admin", slog.Bool("isAdmin", isAdmin))
-
-	return isAdmin, nil
+	return false, nil
 
 }

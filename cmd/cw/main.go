@@ -16,7 +16,7 @@ func main() {
 
 	log.Info("start app", slog.Any("cfg", cfg), slog.Int("port", cfg.GRPC.Port))
 
-	application := app.New(log, cfg.GRPC.Port, cfg.StoragePath, cfg.TokenTTL) //готовый сервер с логгером и сервисом
+	application := app.New(log, cfg.GRPC.Port, cfg.DbContainerPath) //готовый сервер с логгером и сервисом
 
 	go application.GRPCServer.MustRun() //если не смогли запуститься - паникуем
 
