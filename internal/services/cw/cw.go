@@ -32,9 +32,9 @@ var (
 	ErrUserExists         = errors.New("user already exists")
 )
 
-type AppProvider interface {
-	App(ctx context.Context, appId int) (models.App, error)
-}
+//type AppProvider interface {
+//	App(ctx context.Context, appId int) (models.App, error)
+//}
 
 func New(log *slog.Logger, userSaver UserSaver, usrProvider UserProvider) *CW {
 	return &CW{
