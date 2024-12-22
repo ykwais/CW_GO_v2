@@ -9,12 +9,19 @@ import (
 	"fmt"
 	"golang.org/x/crypto/bcrypt"
 	"log/slog"
+	"os"
+	"path/filepath"
 )
 
 type CW struct {
 	log         *slog.Logger
 	usrSaver    UserSaver
 	usrProvider UserProvider
+}
+
+type Photo struct {
+	name string
+	data []byte
 }
 
 type UserSaver interface {
@@ -47,6 +54,44 @@ func New(log *slog.Logger, userSaver UserSaver, usrProvider UserProvider) *CW {
 /*
 	ниже представлены уже сама реализация обработки запроса, то есть мы получаем входные данные из реквеста и перенаправляем их в сущность, которая взаимодействует с бд
 */
+
+func (cw *CW) ListPhotos() ([]Photo, error) {
+
+	cw.log.Info("starting list photos")
+
+	photosDir := "./photos"
+
+	if _, err := os.Stat(photosDir); os.IsNotExist(err) {
+		return nil, err
+	}
+
+	files, err := os.ReadDir(photosDir)
+	if err != nil {
+		return nil, err
+	}
+
+	var photos []Photo
+	for _, file := range files {
+
+		if file.IsDir() {
+			continue
+		}
+
+		filePath := filepath.Join(photosDir, file.Name())
+		data, err := os.ReadFile(filePath)
+		if err != nil {
+			return nil, err
+		}
+
+		photos = append(photos, Photo{
+			name: file.Name(),
+			data: data,
+		})
+	}
+
+	return photos, nil
+
+}
 
 func (cw *CW) Login(ctx context.Context, login string, password string /*, appID int*/) (string, error) {
 	const op = "cw.Login"

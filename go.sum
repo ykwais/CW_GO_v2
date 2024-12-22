@@ -51,8 +51,8 @@ github.com/stretchr/testify v1.3.0/go.mod h1:M5WIy9Dh21IEIfnGCwXGc5bZfKNJtfHm1UV
 github.com/stretchr/testify v1.7.0/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/h/Wwjteg=
 github.com/stretchr/testify v1.9.0 h1:HtqpIVDClZ4nwg75+f6Lvsy/wHu+3BoSGCbBAcpTsTg=
 github.com/stretchr/testify v1.9.0/go.mod h1:r2ic/lqez/lEtzL7wO/rwa5dbSLXVDPFyf8C91i36aY=
-github.com/ykwais/CW_GO_protos v0.0.0-20241220141150-41817cf703c9 h1:2qjdK1XGV83BpGb0AeQKqYDvye+4vXXx6B3ncqGbwGI=
-github.com/ykwais/CW_GO_protos v0.0.0-20241220141150-41817cf703c9/go.mod h1:h4Z8WWGFRxHyi8ZHcxmCS50e4TMNlDqxuBNaiNwCJ2w=
+github.com/ykwais/CW_GO_protos v0.0.0-20241220165536-582ae4d7a24c h1:jotfpf7Wzuai9pjxL5qILjE24wdX96BEYYDEfJP/YcQ=
+github.com/ykwais/CW_GO_protos v0.0.0-20241220165536-582ae4d7a24c/go.mod h1:h4Z8WWGFRxHyi8ZHcxmCS50e4TMNlDqxuBNaiNwCJ2w=
 go.opentelemetry.io/otel v1.31.0 h1:NsJcKPIW0D0H3NgzPDHmo0WW6SptzPdqg/L1zsIm2hY=
 go.opentelemetry.io/otel v1.31.0/go.mod h1:O0C14Yl9FgkjqcCZAsE053C13OaddMYr/hz6clDkEJE=
 go.opentelemetry.io/otel/metric v1.31.0 h1:FSErL0ATQAmYHUIzSezZibnyVlft1ybhy4ozRPcF2fE=

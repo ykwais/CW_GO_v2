@@ -16,6 +16,7 @@ type CW interface {
 	Login(ctx context.Context, login, password string) (token string, err error)
 	Register(ctx context.Context, login, password string) (userID int64, err error)
 	IsAdmin(ctx context.Context, userID int64) (bool, error)
+	ListPhotos() ([]cw.Photo, error)
 }
 
 type serverAPI struct {
@@ -37,6 +38,10 @@ func RegisterServerAPI(gRPC *grpc.Server, logger *slog.Logger, service CW) {
 	ниже представлены обработчики запросов, поступающие на сервер. Каждый из обработчиков отвечает за валидацию, вызов реализации метода - Login например
 	и посылку ответа на клиент
 */
+
+func (s *serverAPI) ListPhotos() (, error) {
+
+}
 
 func (s *serverAPI) Login(ctx context.Context, req *cwv1.LoginRequest) (*cwv1.LoginResponse, error) {
 	s.Logger.Info("on LOGIN request get: ", slog.String("login", req.Login), slog.String("password", req.Password))
