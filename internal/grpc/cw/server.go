@@ -39,7 +39,7 @@ func RegisterServerAPI(gRPC *grpc.Server, logger *slog.Logger, service CW) {
 	и посылку ответа на клиент
 */
 
-func (s *serverAPI) ListPhotos(req *cwv1.EmptyRequest) (, error) {
+func (s *serverAPI) ListPhotos() (*cwv1.ListPhotosResponse, error) {
 
 }
 
