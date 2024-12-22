@@ -16,7 +16,7 @@ type CW interface {
 	Login(ctx context.Context, login, password string) (token string, err error)
 	Register(ctx context.Context, login, password string) (userID int64, err error)
 	IsAdmin(ctx context.Context, userID int64) (bool, error)
-	ListPhotos() ([]cw.Photo, error)
+	ListPhotos(nothing string) ([]cw.Photo, error)
 }
 
 type serverAPI struct {
@@ -39,7 +39,7 @@ func RegisterServerAPI(gRPC *grpc.Server, logger *slog.Logger, service CW) {
 	и посылку ответа на клиент
 */
 
-func (s *serverAPI) ListPhotos() (, error) {
+func (s *serverAPI) ListPhotos(req *cwv1.EmptyRequest) (, error) {
 
 }
 

@@ -10,7 +10,7 @@ require (
 	github.com/ilyakaznacheev/cleanenv v1.5.0
 	github.com/jackc/pgx/v5 v5.5.4
 	github.com/mattn/go-sqlite3 v1.14.24
-	github.com/ykwais/CW_GO_protos v0.0.0-20241220165536-582ae4d7a24c
+	github.com/ykwais/CW_GO_protos v0.0.0-20241222224428-e9400fb37417
 	golang.org/x/crypto v0.31.0
 	google.golang.org/grpc v1.69.2
 )
