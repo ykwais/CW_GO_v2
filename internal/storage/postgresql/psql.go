@@ -2,12 +2,13 @@ package postgresql
 
 import (
 	"CW_DB_v2/internal/domain/models"
+	"github.com/jackc/pgx/v5"
+
 	//"CW_DB_v2/internal/storage"
 	"context"
 	//"database/sql"
 	//"errors"
 	"fmt"
-	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"log"
 	"os"
@@ -87,23 +88,58 @@ func executeSQLFile(dbPool *pgxpool.Pool, filePath string) error {
 func (s *Storage) SaveUser(ctx context.Context, login string, passHash []byte) (int64, error) {
 	const op = "storage.postgresql.SaveUser"
 
-	query := "SELECT register_client(@user_name, @pass_hash)"
-	args := pgx.NamedArgs{
-		"user_name": login,
-		"pass_hash": passHash,
-	}
+	resultCh := make(chan struct {
+		id  int64
+		err error
+	}, 1)
 
-	_, err := s.db.Exec(ctx, query, args)
-	if err != nil {
-		return 0, fmt.Errorf("%s : %w", op, err)
-	}
+	go func() {
+		query := "SELECT register_client(@user_name, @pass_hash)"
+		args := pgx.NamedArgs{
+			"user_name": login,
+			"pass_hash": passHash,
+		}
 
-	//id, err := res.lastIndex()
+		_, err := s.db.Exec(ctx, query, args)
+		if err != nil {
+			resultCh <- struct {
+				id  int64
+				err error
+			}{0, fmt.Errorf("%s : %w", op, err)}
+			return
+		}
+
+		// Если все успешно, передаем id
+		// Для примера возвращаем фиксированное значение 52
+		resultCh <- struct {
+			id  int64
+			err error
+		}{52, nil}
+	}()
+
+	// Ожидаем результат из go-routine
+	result := <-resultCh
+
+	// Возвращаем результат (ID или ошибку)
+	return result.id, result.err
+
+	//query := "SELECT register_client(@user_name, @pass_hash)"
+	//args := pgx.NamedArgs{
+	//	"user_name": login,
+	//	"pass_hash": passHash,
+	//}
+	//
+	//_, err := s.db.Exec(ctx, query, args)
 	//if err != nil {
 	//	return 0, fmt.Errorf("%s : %w", op, err)
 	//}
-
-	return 52, nil
+	//
+	////id, err := res.lastIndex()
+	////if err != nil {
+	////	return 0, fmt.Errorf("%s : %w", op, err)
+	////}
+	//
+	//return 52, nil
 
 }
 

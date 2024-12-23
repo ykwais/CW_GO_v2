@@ -136,27 +136,79 @@ func (cw *CW) Register(ctx context.Context, login string, password string) (int6
 	log := cw.log.With(slog.String("op", op), slog.String("login", login))
 	log.Info("registering new user")
 
-	passHash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
-	if err != nil {
-		log.Error("failed to generate hash password", slog.String("error", err.Error()))
+	resultCh := make(chan struct {
+		id  int64
+		err error
+	}, 1)
 
-		return 0, fmt.Errorf("%s : %w", op, err)
-	}
-
-	id, err := cw.usrSaver.SaveUser(ctx, login, passHash)
-	if err != nil {
-		if errors.Is(err, storage.ErrUserExists) {
-			log.Warn("user already exists", slog.String("login", login), slog.String("error", err.Error()))
-
-			return 0, fmt.Errorf("%s : %w", op, ErrUserExists)
+	go func() {
+		// Генерация хеша пароля
+		passHash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+		if err != nil {
+			log.Error("failed to generate hash password", slog.String("error", err.Error()))
+			resultCh <- struct {
+				id  int64
+				err error
+			}{0, fmt.Errorf("%s : %w", op, err)}
+			return
 		}
-		log.Error("failed to save user", slog.String("error", err.Error()))
-		return 0, fmt.Errorf("%s : %w", op, err)
+
+		// Сохранение пользователя в базе данных
+		id, err := cw.usrSaver.SaveUser(ctx, login, passHash)
+		if err != nil {
+			if errors.Is(err, storage.ErrUserExists) {
+				log.Warn("user already exists", slog.String("login", login), slog.String("error", err.Error()))
+				resultCh <- struct {
+					id  int64
+					err error
+				}{0, fmt.Errorf("%s : %w", op, ErrUserExists)}
+				return
+			}
+			log.Error("failed to save user", slog.String("error", err.Error()))
+			resultCh <- struct {
+				id  int64
+				err error
+			}{0, fmt.Errorf("%s : %w", op, err)}
+			return
+		}
+
+		// Успешная регистрация
+		log.Info("user registered successfully")
+		resultCh <- struct {
+			id  int64
+			err error
+		}{id, nil}
+	}()
+
+	result := <-resultCh
+
+	if result.err != nil {
+		return 0, result.err
 	}
 
-	log.Info("user registered successfully")
+	return result.id, nil
 
-	return id, nil
+	//passHash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	//if err != nil {
+	//	log.Error("failed to generate hash password", slog.String("error", err.Error()))
+	//
+	//	return 0, fmt.Errorf("%s : %w", op, err)
+	//}
+	//
+	//id, err := cw.usrSaver.SaveUser(ctx, login, passHash)
+	//if err != nil {
+	//	if errors.Is(err, storage.ErrUserExists) {
+	//		log.Warn("user already exists", slog.String("login", login), slog.String("error", err.Error()))
+	//
+	//		return 0, fmt.Errorf("%s : %w", op, ErrUserExists)
+	//	}
+	//	log.Error("failed to save user", slog.String("error", err.Error()))
+	//	return 0, fmt.Errorf("%s : %w", op, err)
+	//}
+	//
+	//log.Info("user registered successfully")
+	//
+	//return id, nil
 }
 
 //func (cw *CW) RegisterNewUser(ctx context.Context, login string, password string) (int64, error) {
