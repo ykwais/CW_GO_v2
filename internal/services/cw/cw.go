@@ -130,11 +130,7 @@ func (cw *CW) Login(ctx context.Context, login string, password string /*, appID
 
 }
 
-func (cw *CW) Register(ctx context.Context, username string, password string) (int64, error) {
-	return cw.RegisterNewUser(ctx, username, password)
-}
-
-func (cw *CW) RegisterNewUser(ctx context.Context, login string, password string) (int64, error) {
+func (cw *CW) Register(ctx context.Context, login string, password string) (int64, error) {
 	const op = "cw.RegisterNewUser"
 
 	log := cw.log.With(slog.String("op", op), slog.String("login", login))
@@ -161,8 +157,37 @@ func (cw *CW) RegisterNewUser(ctx context.Context, login string, password string
 	log.Info("user registered successfully")
 
 	return id, nil
-
 }
+
+//func (cw *CW) RegisterNewUser(ctx context.Context, login string, password string) (int64, error) {
+//	const op = "cw.RegisterNewUser"
+//
+//	log := cw.log.With(slog.String("op", op), slog.String("login", login))
+//	log.Info("registering new user")
+//
+//	passHash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+//	if err != nil {
+//		log.Error("failed to generate hash password", slog.String("error", err.Error()))
+//
+//		return 0, fmt.Errorf("%s : %w", op, err)
+//	}
+//
+//	id, err := cw.usrSaver.SaveUser(ctx, login, passHash)
+//	if err != nil {
+//		if errors.Is(err, storage.ErrUserExists) {
+//			log.Warn("user already exists", slog.String("login", login), slog.String("error", err.Error()))
+//
+//			return 0, fmt.Errorf("%s : %w", op, ErrUserExists)
+//		}
+//		log.Error("failed to save user", slog.String("error", err.Error()))
+//		return 0, fmt.Errorf("%s : %w", op, err)
+//	}
+//
+//	log.Info("user registered successfully")
+//
+//	return id, nil
+//
+//}
 
 func (cw *CW) IsAdmin(ctx context.Context, userID int64) (bool, error) {
 	const op = "cw.IsAdmin"

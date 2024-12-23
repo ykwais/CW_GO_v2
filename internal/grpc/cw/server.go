@@ -89,17 +89,38 @@ func (s *serverAPI) Register(ctx context.Context, req *cwv1.RegisterRequest) (*c
 		return nil, status.Error(codes.InvalidArgument, "empty login or password")
 	}
 
-	userID, err := s.cw.Register(ctx, req.GetLogin(), req.GetPassword())
-	if err != nil {
-		if errors.Is(err, cw.ErrUserExists) {
-			return nil, status.Error(codes.AlreadyExists, "user already exists")
+	resultCh := make(chan *cwv1.RegisterResponse, 1)
+
+	go func() {
+		userID, err := s.cw.Register(ctx, req.GetLogin(), req.GetPassword())
+		if err != nil {
+			resultCh <- nil
+			return
 		}
-		return nil, status.Error(codes.Internal, "internal error")
+		resultCh <- &cwv1.RegisterResponse{
+			UserId: userID,
+		}
+	}()
+
+	registerResponse := <-resultCh
+
+	if registerResponse == nil {
+		return nil, status.Error(codes.AlreadyExists, "user already exists")
 	}
 
-	return &cwv1.RegisterResponse{
-		UserId: userID,
-	}, nil
+	return registerResponse, nil
+
+	//userID, err := s.cw.Register(ctx, req.GetLogin(), req.GetPassword())
+	//if err != nil {
+	//	if errors.Is(err, cw.ErrUserExists) {
+	//		return nil, status.Error(codes.AlreadyExists, "user already exists")
+	//	}
+	//	return nil, status.Error(codes.Internal, "internal error")
+	//}
+
+	//return &cwv1.RegisterResponse{
+	//	UserId: userID,
+	//}, nil
 }
 
 func (s *serverAPI) isAdmin(ctx context.Context, req *cwv1.IsAdminRequest) (*cwv1.IsAdminResponse, error) {
