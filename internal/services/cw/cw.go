@@ -19,11 +19,6 @@ type CW struct {
 	usrProvider UserProvider
 }
 
-type Photo struct {
-	name string
-	data []byte
-}
-
 type UserSaver interface {
 	SaveUser(ctx context.Context, login string, passHash []byte) (uid int64, err error)
 }
@@ -55,7 +50,7 @@ func New(log *slog.Logger, userSaver UserSaver, usrProvider UserProvider) *CW {
 	ниже представлены уже сама реализация обработки запроса, то есть мы получаем входные данные из реквеста и перенаправляем их в сущность, которая взаимодействует с бд
 */
 
-func (cw *CW) ListPhotos() ([]Photo, error) {
+func (cw *CW) ListPhotos() ([]models.Photo, error) {
 
 	cw.log.Info("starting list photos")
 
@@ -70,7 +65,7 @@ func (cw *CW) ListPhotos() ([]Photo, error) {
 		return nil, err
 	}
 
-	var photos []Photo
+	var photos []models.Photo
 	for _, file := range files {
 
 		if file.IsDir() {
@@ -83,9 +78,9 @@ func (cw *CW) ListPhotos() ([]Photo, error) {
 			return nil, err
 		}
 
-		photos = append(photos, Photo{
-			name: file.Name(),
-			data: data,
+		photos = append(photos, models.Photo{
+			Name: file.Name(),
+			Data: data,
 		})
 	}
 

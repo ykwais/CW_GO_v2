@@ -1,6 +1,7 @@
 package cwgrpc
 
 import (
+	"CW_DB_v2/internal/domain/models"
 	"CW_DB_v2/internal/services/cw"
 	"CW_DB_v2/internal/storage"
 	"context"
@@ -16,7 +17,7 @@ type CW interface {
 	Login(ctx context.Context, login, password string) (token string, err error)
 	Register(ctx context.Context, login, password string) (userID int64, err error)
 	IsAdmin(ctx context.Context, userID int64) (bool, error)
-	ListPhotos(nothing string) ([]cw.Photo, error)
+	ListPhotos() ([]models.Photo, error)
 }
 
 type serverAPI struct {
@@ -39,8 +40,28 @@ func RegisterServerAPI(gRPC *grpc.Server, logger *slog.Logger, service CW) {
 	и посылку ответа на клиент
 */
 
-func (s *serverAPI) ListPhotos(req *cwv1., stream cwv1.Service_ListPhotosServer) error {
+func (s *serverAPI) ListPhotos(req *cwv1.EmptyRequest, stream cwv1.Service_ListPhotosServer) error {
+	s.Logger.Info("start ListPhotos")
+	photos, err := s.cw.ListPhotos()
+	if err != nil {
+		s.Logger.Error("failed to list photos", err)
+		return err
+	}
 
+	for _, photo := range photos {
+		response := &cwv1.ListPhotosResponse{
+			PhotoName: photo.Name,
+			Chunk:     photo.Data,
+		}
+
+		if err := stream.Send(response); err != nil {
+			s.Logger.Error("failed to send photo", err)
+			return err
+		}
+	}
+
+	s.Logger.Info("all photos sent successfully")
+	return nil
 }
 
 func (s *serverAPI) Login(ctx context.Context, req *cwv1.LoginRequest) (*cwv1.LoginResponse, error) {
