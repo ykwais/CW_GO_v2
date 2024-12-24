@@ -3,7 +3,6 @@ package cw
 import (
 	"CW_DB_v2/internal/domain/models"
 	"CW_DB_v2/internal/storage"
-	"CW_DB_v2/lib/jwt"
 	"context"
 	"errors"
 	"fmt"
@@ -19,7 +18,7 @@ type CW struct {
 }
 
 type Service interface {
-	SaveUser(ctx context.Context, login string, passHash []byte) (uid int64, err error)
+	SaveUser(ctx context.Context, login string, passHash []byte, email string, real_name string) (uid int64, err error)
 	User(ctx context.Context, login string) (models.User, error)
 	IsAdmin(ctx context.Context, userID int64) (bool, error)
 }
@@ -79,7 +78,7 @@ func (cw *CW) ListPhotos() ([]models.Photo, error) {
 
 }
 
-func (cw *CW) Login(ctx context.Context, login string, password string) (string, error) {
+func (cw *CW) Login(ctx context.Context, login string, password string) (int64, error) {
 	const op = "cw.Login"
 
 	log := cw.log.With(slog.String("op", op), slog.String("login", login))
@@ -90,33 +89,33 @@ func (cw *CW) Login(ctx context.Context, login string, password string) (string,
 		if errors.Is(err, storage.ErrUserNotFound) {
 			cw.log.Warn("user not found", slog.String("login", login), slog.String("error", err.Error()))
 
-			return "", fmt.Errorf("%s: %w", op, ErrInvalidCredentials)
+			return 0, fmt.Errorf("%s: %w", op, ErrInvalidCredentials)
 
 		}
 
 		cw.log.Error("failed to get user", slog.String("login", login), slog.String("error", err.Error()))
-		return "", fmt.Errorf("%s: %w", op, err)
+		return 0, fmt.Errorf("%s: %w", op, err)
 
 	}
 
 	if err := bcrypt.CompareHashAndPassword(user.Pass_hash, []byte(password)); err != nil {
 		cw.log.Info("invalid credentials", slog.String("login", login), slog.String("error", err.Error()))
-		return "", fmt.Errorf("%s: %w", op, ErrInvalidCredentials)
+		return 0, fmt.Errorf("%s: %w", op, ErrInvalidCredentials)
 	}
 
 	log.Info("user logged in successfully", slog.String("login", login))
 
-	token, err := jwt.NewToken(user /* app, */)
-	if err != nil {
-		cw.log.Error("failed to create token", slog.String("login", login), slog.String("error", err.Error()))
-		return "", fmt.Errorf("%s: %w", op, err)
-	}
+	//token, err := jwt.NewToken(user /* app, */)
+	//if err != nil {
+	//	cw.log.Error("failed to create token", slog.String("login", login), slog.String("error", err.Error()))
+	//	return "", fmt.Errorf("%s: %w", op, err)
+	//}
 
-	return token, nil
+	return user.ID, nil
 
 }
 
-func (cw *CW) Register(ctx context.Context, login string, password string) (int64, error) {
+func (cw *CW) Register(ctx context.Context, login string, password string, email string, real_name string) (int64, error) {
 	const op = "cw.RegisterNewUser"
 
 	log := cw.log.With(slog.String("op", op), slog.String("login", login))
@@ -139,7 +138,7 @@ func (cw *CW) Register(ctx context.Context, login string, password string) (int6
 			return
 		}
 
-		id, err := cw.srvc.SaveUser(ctx, login, passHash)
+		id, err := cw.srvc.SaveUser(ctx, login, passHash, email, real_name)
 		if err != nil {
 			if errors.Is(err, storage.ErrUserExists) {
 				log.Warn("user already exists", slog.String("login", login), slog.String("error", err.Error()))

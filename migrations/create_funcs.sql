@@ -1,5 +1,5 @@
 
-CREATE OR REPLACE FUNCTION register_user(
+CREATE OR REPLACE FUNCTION register_user( --вроде норм
     p_username VARCHAR(50),
     p_password_hash TEXT,
     p_email VARCHAR(100),
@@ -23,29 +23,23 @@ $$ ;
 
 
 
-CREATE OR REPLACE FUNCTION login_user(
-    p_username VARCHAR(50),
-    p_password_hash TEXT
-) RETURNS BIGINT
 
+CREATE OR REPLACE FUNCTION login_user(--вроде норм
+    p_username VARCHAR(50)
+) RETURNS TABLE(id BIGINT, login VARCHAR(50), pass_hash Text)
     LANGUAGE plpgsql
 AS $$
-DECLARE
-    v_user_id BIGINT;
 BEGIN
-
-    SELECT id INTO v_user_id
-    FROM users
-    WHERE username = p_username AND password_hash = p_password_hash;
+    RETURN QUERY
+        SELECT users.id, username, password_hash
+        FROM users
+        WHERE username = p_username;
 
     IF NOT FOUND THEN
-        RAISE EXCEPTION 'Invalid username or password';
+        RAISE EXCEPTION 'Invalid username';
     END IF;
-
-    RETURN v_user_id;
 END;
-$$ ;
-
+$$;
 
 
 

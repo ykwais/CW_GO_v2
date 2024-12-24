@@ -3,7 +3,6 @@ package cwgrpc
 import (
 	"CW_DB_v2/internal/domain/models"
 	"CW_DB_v2/internal/services/cw"
-	"CW_DB_v2/internal/storage"
 	"context"
 	"errors"
 	cwv1 "github.com/ykwais/CW_GO_protos/gen/go/cw"
@@ -14,9 +13,9 @@ import (
 )
 
 type CW interface {
-	Login(ctx context.Context, login, password string) (token string, err error)
-	Register(ctx context.Context, login, password string) (userID int64, err error)
-	IsAdmin(ctx context.Context, userID int64) (bool, error)
+	Login(ctx context.Context, login, password string) (userId int64, err error)
+	Register(ctx context.Context, login, password, email, real_name string) (userID int64, err error)
+
 	ListPhotos() ([]models.Photo, error)
 }
 
@@ -49,16 +48,38 @@ func (s *serverAPI) ListPhotos(req *cwv1.EmptyRequest, stream cwv1.Service_ListP
 	}
 
 	for _, photo := range photos {
-		response := &cwv1.ListPhotosResponse{
-			PhotoName: photo.Name,
-			Chunk:     photo.Data,
-		}
 
-		if err := stream.Send(response); err != nil {
-			s.Logger.Error("failed to send photo", err)
-			return err
+		chunkSize := 1024 * 1024
+		data := photo.Data
+		for i := 0; i < len(data); i += chunkSize {
+			end := i + chunkSize
+			if end > len(data) {
+				end = len(data)
+			}
+
+			response := &cwv1.ListPhotosResponse{
+				PhotoName: photo.Name,
+				Chunk:     data[i:end],
+			}
+
+			if err := stream.Send(response); err != nil {
+				s.Logger.Error("failed to send photo chunk", err)
+				return err
+			}
 		}
 	}
+
+	//for _, photo := range photos {
+	//	response := &cwv1.ListPhotosResponse{
+	//		PhotoName: photo.Name,
+	//		Chunk:     photo.Data,
+	//	}
+	//
+	//	if err := stream.Send(response); err != nil {
+	//		s.Logger.Error("failed to send photo", err)
+	//		return err
+	//	}
+	//}
 
 	s.Logger.Info("all photos sent successfully")
 	return nil
@@ -70,7 +91,7 @@ func (s *serverAPI) Login(ctx context.Context, req *cwv1.LoginRequest) (*cwv1.Lo
 		return nil, status.Error(codes.InvalidArgument, "empty login or password")
 	}
 
-	token, err := s.cw.Login(ctx, req.GetLogin(), req.GetPassword())
+	userID, err := s.cw.Login(ctx, req.GetLogin(), req.GetPassword())
 	if err != nil {
 		if errors.Is(err, cw.ErrInvalidCredentials) {
 			return nil, status.Error(codes.InvalidArgument, "invalid login or password")
@@ -79,7 +100,7 @@ func (s *serverAPI) Login(ctx context.Context, req *cwv1.LoginRequest) (*cwv1.Lo
 	}
 
 	return &cwv1.LoginResponse{
-		Token: token,
+		UserId: userID,
 	}, nil
 }
 
@@ -92,7 +113,7 @@ func (s *serverAPI) Register(ctx context.Context, req *cwv1.RegisterRequest) (*c
 	resultCh := make(chan *cwv1.RegisterResponse, 1)
 
 	go func() {
-		userID, err := s.cw.Register(ctx, req.GetLogin(), req.GetPassword())
+		userID, err := s.cw.Register(ctx, req.GetLogin(), req.GetPassword(), req.GetEmail(), req.GetRealName())
 		if err != nil {
 			resultCh <- nil
 			return
@@ -123,18 +144,18 @@ func (s *serverAPI) Register(ctx context.Context, req *cwv1.RegisterRequest) (*c
 	//}, nil
 }
 
-func (s *serverAPI) isAdmin(ctx context.Context, req *cwv1.IsAdminRequest) (*cwv1.IsAdminResponse, error) {
-	if req.GetUserId() == 0 {
-		return nil, status.Error(codes.InvalidArgument, "user ID cannot be 0")
-	}
-
-	isAdmin, err := s.cw.IsAdmin(ctx, req.GetUserId())
-	if err != nil {
-		if errors.Is(err, storage.ErrUserNotFound) {
-			return nil, status.Error(codes.NotFound, "user not found")
-		}
-		return nil, status.Error(codes.Internal, "internal error")
-	}
-
-	return &cwv1.IsAdminResponse{IsAdmin: isAdmin}, nil
-}
+//func (s *serverAPI) isAdmin(ctx context.Context, req *cwv1.IsAdminRequest) (*cwv1.IsAdminResponse, error) {
+//	if req.GetUserId() == 0 {
+//		return nil, status.Error(codes.InvalidArgument, "user ID cannot be 0")
+//	}
+//
+//	isAdmin, err := s.cw.IsAdmin(ctx, req.GetUserId())
+//	if err != nil {
+//		if errors.Is(err, storage.ErrUserNotFound) {
+//			return nil, status.Error(codes.NotFound, "user not found")
+//		}
+//		return nil, status.Error(codes.Internal, "internal error")
+//	}
+//
+//	return &cwv1.IsAdminResponse{IsAdmin: isAdmin}, nil
+//}

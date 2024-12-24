@@ -87,7 +87,7 @@ func executeSQLFile(dbPool *pgxpool.Pool, filePath string) error {
 	return nil
 }
 
-func (s *Storage) SaveUser(ctx context.Context, login string, passHash []byte) (int64, error) {
+func (s *Storage) SaveUser(ctx context.Context, login string, passHash []byte, email string, real_name string) (int64, error) {
 	const op = "storage.postgresql.SaveUser"
 
 	resultCh := make(chan struct {
@@ -96,13 +96,16 @@ func (s *Storage) SaveUser(ctx context.Context, login string, passHash []byte) (
 	}, 1)
 
 	go func() {
-		query := "SELECT register_client(@user_name, @pass_hash)"
+		query := "SELECT register_user(@user_name, @pass_hash, @email, @real_name)"
 		args := pgx.NamedArgs{
 			"user_name": login,
 			"pass_hash": passHash,
+			"email":     email,
+			"real_name": real_name,
 		}
 
-		_, err := s.db.Exec(ctx, query, args)
+		var id_user int64
+		err := s.db.QueryRow(ctx, query, args).Scan(&id_user)
 		if err != nil {
 			resultCh <- struct {
 				id  int64
@@ -111,18 +114,14 @@ func (s *Storage) SaveUser(ctx context.Context, login string, passHash []byte) (
 			return
 		}
 
-		// Если все успешно, передаем id
-		// Для примера возвращаем фиксированное значение 52
 		resultCh <- struct {
 			id  int64
 			err error
-		}{52, nil}
+		}{id_user, nil}
 	}()
 
-	// Ожидаем результат из go-routine
 	result := <-resultCh
 
-	// Возвращаем результат (ID или ошибку)
 	return result.id, result.err
 
 	//query := "SELECT register_client(@user_name, @pass_hash)"
@@ -148,22 +147,70 @@ func (s *Storage) SaveUser(ctx context.Context, login string, passHash []byte) (
 func (s *Storage) User(ctx context.Context, login string) (models.User, error) {
 	const op = "storage.postgresql.User"
 
-	query := "SELECT id, login, password_hash From Users WHERE login = $1"
+	resultCh := make(chan struct {
+		user models.User
+		err  error
+	}, 1)
 
-	rows, err := s.db.Query(ctx, query, login)
-	if err != nil {
-		return models.User{}, fmt.Errorf("%s : %w", op, err)
-	}
+	go func() {
 
-	var user models.User
-	for rows.Next() {
-		err := rows.Scan(&user.ID, &user.Login, &user.Pass_hash)
-		if err != nil {
-			return models.User{}, fmt.Errorf("%s : %w", op, err)
+		query := "SELECT * from login_user(@login)"
+		args := pgx.NamedArgs{
+			"login": login,
 		}
-	}
 
-	return user, nil
+		rows, err := s.db.Query(ctx, query, args)
+		if err != nil {
+			resultCh <- struct {
+				user models.User
+				err  error
+			}{models.User{}, fmt.Errorf("%s : %w", op, err)}
+			return
+		}
+
+		var user models.User
+
+		for rows.Next() {
+			err := rows.Scan(&user.ID, &user.Login, &user.Pass_hash)
+			if err != nil {
+
+				resultCh <- struct {
+					user models.User
+					err  error
+				}{models.User{}, fmt.Errorf("%s : %w", op, err)}
+				return
+			}
+		}
+
+		resultCh <- struct {
+			user models.User
+			err  error
+		}{user, nil}
+	}()
+
+	result := <-resultCh
+
+	return result.user, result.err
+
+	//query := "SELECT * from login_user(@login)"
+	//args := pgx.NamedArgs{
+	//	"login": login,
+	//}
+	//
+	//rows, err := s.db.Query(ctx, query, args)
+	//if err != nil {
+	//	return models.User{}, fmt.Errorf("%s : %w", op, err)
+	//}
+	//
+	//var user models.User
+	//for rows.Next() {
+	//	err := rows.Scan(&user.ID, &user.Login, &user.Pass_hash)
+	//	if err != nil {
+	//		return models.User{}, fmt.Errorf("%s : %w", op, err)
+	//	}
+	//}
+	//
+	//return user, nil
 }
 
 func (s *Storage) IsAdmin(ctx context.Context, userID int64) (bool, error) {
