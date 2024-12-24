@@ -94,7 +94,7 @@ DO $$
     END $$;
 
 
-CREATE TABLE VehiclePhotos (
+CREATE TABLE if not exists VehiclePhotos (
                                id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
                                vehicle_id BIGINT NOT NULL,
                                photo_url TEXT NOT NULL,
