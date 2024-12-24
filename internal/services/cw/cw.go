@@ -14,16 +14,12 @@ import (
 )
 
 type CW struct {
-	log         *slog.Logger
-	usrSaver    UserSaver
-	usrProvider UserProvider
+	log  *slog.Logger
+	srvc Service
 }
 
-type UserSaver interface {
+type Service interface {
 	SaveUser(ctx context.Context, login string, passHash []byte) (uid int64, err error)
-}
-
-type UserProvider interface {
 	User(ctx context.Context, login string) (models.User, error)
 	IsAdmin(ctx context.Context, userID int64) (bool, error)
 }
@@ -34,15 +30,10 @@ var (
 	ErrUserExists         = errors.New("user already exists")
 )
 
-//type AppProvider interface {
-//	App(ctx context.Context, appId int) (models.App, error)
-//}
-
-func New(log *slog.Logger, userSaver UserSaver, usrProvider UserProvider) *CW {
+func New(log *slog.Logger, service Service /*userSaver UserSaver, usrProvider UserProvider*/) *CW {
 	return &CW{
-		log:         log,
-		usrSaver:    userSaver,
-		usrProvider: usrProvider,
+		log:  log,
+		srvc: service,
 	}
 }
 
@@ -88,13 +79,13 @@ func (cw *CW) ListPhotos() ([]models.Photo, error) {
 
 }
 
-func (cw *CW) Login(ctx context.Context, login string, password string /*, appID int*/) (string, error) {
+func (cw *CW) Login(ctx context.Context, login string, password string) (string, error) {
 	const op = "cw.Login"
 
 	log := cw.log.With(slog.String("op", op), slog.String("login", login))
 	log.Info("logining user")
 
-	user, err := cw.usrProvider.User(ctx, login)
+	user, err := cw.srvc.User(ctx, login)
 	if err != nil {
 		if errors.Is(err, storage.ErrUserNotFound) {
 			cw.log.Warn("user not found", slog.String("login", login), slog.String("error", err.Error()))
@@ -112,11 +103,6 @@ func (cw *CW) Login(ctx context.Context, login string, password string /*, appID
 		cw.log.Info("invalid credentials", slog.String("login", login), slog.String("error", err.Error()))
 		return "", fmt.Errorf("%s: %w", op, ErrInvalidCredentials)
 	}
-
-	/*app, err := cw.appProvider.App(ctx, appID)
-	if err != nil {
-		return "", fmt.Errorf("%s: %w", op, err)
-	}*/
 
 	log.Info("user logged in successfully", slog.String("login", login))
 
@@ -142,7 +128,7 @@ func (cw *CW) Register(ctx context.Context, login string, password string) (int6
 	}, 1)
 
 	go func() {
-		// Генерация хеша пароля
+
 		passHash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 		if err != nil {
 			log.Error("failed to generate hash password", slog.String("error", err.Error()))
@@ -153,8 +139,7 @@ func (cw *CW) Register(ctx context.Context, login string, password string) (int6
 			return
 		}
 
-		// Сохранение пользователя в базе данных
-		id, err := cw.usrSaver.SaveUser(ctx, login, passHash)
+		id, err := cw.srvc.SaveUser(ctx, login, passHash)
 		if err != nil {
 			if errors.Is(err, storage.ErrUserExists) {
 				log.Warn("user already exists", slog.String("login", login), slog.String("error", err.Error()))
@@ -172,7 +157,6 @@ func (cw *CW) Register(ctx context.Context, login string, password string) (int6
 			return
 		}
 
-		// Успешная регистрация
 		log.Info("user registered successfully")
 		resultCh <- struct {
 			id  int64

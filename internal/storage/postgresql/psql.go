@@ -4,6 +4,8 @@ import (
 	"CW_DB_v2/internal/domain/models"
 	"github.com/jackc/pgx/v5"
 
+	//"github.com/jackc/pgx/v5"
+
 	//"CW_DB_v2/internal/storage"
 	"context"
 	//"database/sql"
@@ -20,11 +22,11 @@ type Storage struct {
 	db *pgxpool.Pool
 }
 
-func New(DBconnection string) (*Storage, error) {
+func New(DbConnection string) (*Storage, error) {
 
 	const op = "storage.psql.New"
 
-	dbPool, err := pgxpool.New(context.Background(), DBconnection)
+	dbPool, err := pgxpool.New(context.Background(), DbConnection)
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", op, err)
 	}

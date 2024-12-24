@@ -26,7 +26,7 @@ func New(log *slog.Logger, grpcPort int, DbConnectionPath string) *App {
 	/*
 		cwService - объект, в котором лежит логгер и наша сущность для общения с бд - то есть реализация общения самого - Методы Login, Register и тд
 	*/
-	cwService := cw.New(log, storage, storage) //тут много лишнего
+	cwService := cw.New(log, storage)
 
 	grpcApp := grpcapp.New(log, cwService, grpcPort) //итоговое приложение с логгером, сервером(с реализованным сервисом) и номером порта
 
