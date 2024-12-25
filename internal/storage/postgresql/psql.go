@@ -4,6 +4,7 @@ import (
 	"CW_DB_v2/internal/domain/models"
 	"github.com/jackc/pgx/v5"
 	"strconv"
+	"time"
 
 	//"github.com/jackc/pgx/v5"
 
@@ -95,6 +96,37 @@ func executeSQLFile(dbPool *pgxpool.Pool, filePath string) error {
 	}
 
 	return nil
+}
+
+func (s *Storage) GetUserBookings(userId int64) ([]models.UserBooking, error) {
+	const op = "storage.psql.GetUserBookings"
+
+	query := "Select * from get_user_bookings(@user_id);"
+
+	args := pgx.NamedArgs{"user_id": userId}
+
+	rows, err := s.db.Query(context.Background(), query, args)
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+
+	var res []models.UserBooking
+	for rows.Next() {
+		var current models.UserBooking
+		var start time.Time
+		var end time.Time
+		err := rows.Scan(&current.Brand, &current.Model, &start, &end)
+		if err != nil {
+			return nil, fmt.Errorf("%s: %w", op, err)
+		}
+
+		current.StartDate = start.Format("2006-01-02")
+		current.EndDate = end.Format("2006-01-02")
+
+		res = append(res, current)
+	}
+	return res, nil
+
 }
 
 func (s *Storage) SelectAuto(userId int64, vehicleId int64, dateStart string, dateEnd string) (int64, error) {

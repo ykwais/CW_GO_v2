@@ -200,7 +200,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 
-CREATE OR REPLACE FUNCTION get_user_bookings(p_user_id BIGINT)
+CREATE OR REPLACE FUNCTION get_user_bookings(p_user_id BIGINT)--вроде ок
     RETURNS TABLE (
                       brand_name VARCHAR,
                       model_name VARCHAR,

@@ -24,6 +24,7 @@ type Service interface {
 	GetAvailableCars(start_time string, end_time string) ([]models.BetterPhoto, error)
 	PhotosOfOneAutomobile(id int64) ([]models.Photo, error)
 	SelectAuto(userId int64, vehicleId int64, dateStart string, dateEnd string) (bookingId int64, err error)
+	GetUserBookings(userId int64) ([]models.UserBooking, error)
 }
 
 var (
@@ -42,6 +43,16 @@ func New(log *slog.Logger, service Service) *CW {
 /*
 ниже представлены уже сама реализация обработки запроса, то есть мы получаем входные данные из реквеста и перенаправляем их в сущность, которая взаимодействует с бд
 */
+
+func (cw *CW) GetUserBookings(userId int64) ([]models.UserBooking, error) {
+	cw.log.Info("get user bookings for userId=%d", userId)
+	bookings, err := cw.srvc.GetUserBookings(userId)
+	if err != nil {
+		return nil, err
+	}
+
+	return bookings, nil
+}
 
 func (cw *CW) PhotosOfAutomobile(id int64) (photos []models.Photo, err error) {
 	cw.log.Info("starting inner photos of autos")

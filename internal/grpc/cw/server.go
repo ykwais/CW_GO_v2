@@ -20,6 +20,7 @@ type CW interface {
 	PhotosForMainScreen(ctx context.Context, dateStart string, dateEnd string) (photos []models.BetterPhoto, err error)
 	PhotosOfAutomobile(id int64) (photos []models.Photo, err error)
 	SelectAuto(userId int64, vehicleId int64, dateStart string, dateEnd string) (bookingId int64, err error)
+	GetUserBookings(userId int64) ([]models.UserBooking, error)
 }
 
 type serverAPI struct {
@@ -41,6 +42,33 @@ func RegisterServerAPI(gRPC *grpc.Server, logger *slog.Logger, service CW) {
 	ниже представлены обработчики запросов, поступающие на сервер. Каждый из обработчиков отвечает за валидацию, вызов реализации метода - Login например
 	и посылку ответа на клиент
 */
+
+func (s *serverAPI) GetUserBookings(ctx context.Context, req *cwv1.UserBookingsRequest) (*cwv1.UserBookingsResponse, error) {
+	s.Logger.Info("GetUserBookings called")
+
+	bookings, err := s.cw.GetUserBookings(req.GetUserId())
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+
+	var bookingInfos []*cwv1.BookingInfo
+	for _, booking := range bookings {
+		bookingInfo := &cwv1.BookingInfo{
+			BrandName: booking.Brand,
+			ModelName: booking.Model,
+			DateBegin: booking.StartDate,
+			DateEnd:   booking.EndDate,
+		}
+		bookingInfos = append(bookingInfos, bookingInfo)
+	}
+
+	response := &cwv1.UserBookingsResponse{
+		Bookings: bookingInfos,
+	}
+
+	return response, nil
+
+}
 
 func (s *serverAPI) PhotosOfAutomobile(req *cwv1.PhotosOfAutomobileRequest, res grpc.ServerStreamingServer[cwv1.PhotosOfAutomobileResponse]) error {
 	s.Logger.Info("photos of current automobile start")
