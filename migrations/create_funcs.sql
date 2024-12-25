@@ -43,7 +43,7 @@ $$;
 
 
 
-CREATE OR REPLACE FUNCTION get_available_vehicles(
+CREATE OR REPLACE FUNCTION get_available_vehicles( --вроде норм
     p_date_begin DATE,
     p_date_end DATE
 )
@@ -71,15 +71,14 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-
-
-
 CREATE OR REPLACE FUNCTION book_vehicle(
     p_user_id BIGINT,
     p_vehicle_id BIGINT,
     p_date_begin DATE,
     p_date_end DATE
-) RETURNS VOID AS $$
+) RETURNS BIGINT AS $$
+DECLARE
+    v_booking_id BIGINT;
 BEGIN
 
     IF EXISTS (
@@ -97,14 +96,51 @@ BEGIN
 
 
     INSERT INTO bookings (user_id, vehicle_id, date_begin, date_end)
-    VALUES (p_user_id, p_vehicle_id, p_date_begin, p_date_end);
+    VALUES (p_user_id, p_vehicle_id, p_date_begin, p_date_end)
+    RETURNING id INTO v_booking_id;
 
 
     UPDATE vehicles
     SET status = 'rented'
     WHERE id = p_vehicle_id;
+
+
+    RETURN v_booking_id;
 END;
 $$ LANGUAGE plpgsql;
+
+--
+-- CREATE OR REPLACE FUNCTION book_vehicle(
+--     p_user_id BIGINT,
+--     p_vehicle_id BIGINT,
+--     p_date_begin DATE,
+--     p_date_end DATE
+-- ) RETURNS VOID AS $$
+-- BEGIN
+--
+--     IF EXISTS (
+--         SELECT 1
+--         FROM bookings
+--         WHERE vehicle_id = p_vehicle_id
+--           AND (
+--             (p_date_begin BETWEEN date_begin AND date_end)
+--                 OR (p_date_end BETWEEN date_begin AND date_end)
+--                 OR (date_begin BETWEEN p_date_begin AND p_date_end)
+--             )
+--     ) THEN
+--         RAISE EXCEPTION 'Vehicle is not available for the selected dates';
+--     END IF;
+--
+--
+--     INSERT INTO bookings (user_id, vehicle_id, date_begin, date_end)
+--     VALUES (p_user_id, p_vehicle_id, p_date_begin, p_date_end);
+--
+--
+--     UPDATE vehicles
+--     SET status = 'rented'
+--     WHERE id = p_vehicle_id;
+-- END;
+-- $$ LANGUAGE plpgsql;
 
 
 
@@ -138,7 +174,7 @@ $$ LANGUAGE plpgsql;
 
 
 
-CREATE OR REPLACE FUNCTION log_user_action()
+CREATE OR REPLACE FUNCTION log_user_action() --вроде ок
     RETURNS TRIGGER AS $$
 BEGIN
 
@@ -185,7 +221,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 
-CREATE OR REPLACE FUNCTION get_vehicle_photos_table(_id BIGINT)
+CREATE OR REPLACE FUNCTION get_vehicle_photos_table(_id BIGINT) -- вроде норм
     RETURNS TABLE(photo_url TEXT) AS $$
 BEGIN
     RETURN QUERY
