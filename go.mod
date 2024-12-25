@@ -5,10 +5,9 @@ go 1.22.0
 toolchain go1.22.5
 
 require (
-	github.com/golang-jwt/jwt/v5 v5.2.1
 	github.com/ilyakaznacheev/cleanenv v1.5.0
 	github.com/jackc/pgx/v5 v5.5.4
-	github.com/ykwais/CW_GO_protos v0.0.0-20241224191800-b12dfaf722c0
+	github.com/ykwais/CW_GO_protos v0.0.0-20241224234147-866f793723a9
 	golang.org/x/crypto v0.31.0
 	google.golang.org/grpc v1.69.2
 )

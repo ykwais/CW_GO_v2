@@ -17,6 +17,7 @@ type CW interface {
 	Register(ctx context.Context, login, password, email, real_name string) (userID int64, err error)
 
 	ListPhotos() ([]models.Photo, error)
+	PhotosForMainScreen(ctx context.Context, date_start string, date_end string) (photos []models.Photo, err error)
 }
 
 type serverAPI struct {
@@ -38,6 +39,16 @@ func RegisterServerAPI(gRPC *grpc.Server, logger *slog.Logger, service CW) {
 	ниже представлены обработчики запросов, поступающие на сервер. Каждый из обработчиков отвечает за валидацию, вызов реализации метода - Login например
 	и посылку ответа на клиент
 */
+
+func (s *serverAPI) PhotosForMainScreen(req *cwv1.PhotosForMainScreenRequest, stream cwv1.PhotosForMainScreenResponse) error {
+	s.Logger.Info("start PhotosForMainScreen")
+	combine_photo_datas, err := s.cw.PhotosForMainScreen(context.Background(), req.DateBegin, req.DateEnd)
+	if err != nil {
+		s.Logger.Error("failed to get photos for main screen", err)
+		return err
+	}
+
+}
 
 func (s *serverAPI) ListPhotos(req *cwv1.EmptyRequest, stream cwv1.Service_ListPhotosServer) error {
 	s.Logger.Info("start ListPhotos")

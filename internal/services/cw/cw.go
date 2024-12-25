@@ -37,8 +37,11 @@ func New(log *slog.Logger, service Service /*userSaver UserSaver, usrProvider Us
 }
 
 /*
-	ниже представлены уже сама реализация обработки запроса, то есть мы получаем входные данные из реквеста и перенаправляем их в сущность, которая взаимодействует с бд
+ниже представлены уже сама реализация обработки запроса, то есть мы получаем входные данные из реквеста и перенаправляем их в сущность, которая взаимодействует с бд
 */
+func (cw *CW) PhotosForMainScreen(ctx context.Context, data_start string, data_end string) (photos []models.Photo, err error) {
+
+}
 
 func (cw *CW) ListPhotos() ([]models.Photo, error) {
 
