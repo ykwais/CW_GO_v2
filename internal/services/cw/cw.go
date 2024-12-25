@@ -23,6 +23,7 @@ type Service interface {
 	IsAdmin(ctx context.Context, userID int64) (bool, error)
 	GetAvailableCars(start_time string, end_time string) ([]models.BetterPhoto, error)
 	PhotosOfOneAutomobile(id int64) ([]models.Photo, error)
+	SelectAuto(userId int64, vehicleId int64, dateStart string, dateEnd string) (bookingId int64, err error)
 }
 
 var (
@@ -172,6 +173,17 @@ func (cw *CW) Login(ctx context.Context, login string, password string) (int64, 
 
 	return user.ID, nil
 
+}
+
+func (cw *CW) SelectAuto(userId int64, vehicleId int64, dateStart string, dateEnd string) (bookingId int64, err error) {
+	const op = "cw.SelectAuto"
+
+	id, err := cw.srvc.SelectAuto(userId, vehicleId, dateStart, dateEnd)
+	if err != nil {
+		return 0, fmt.Errorf("%s: %w", op, err)
+	}
+
+	return id, nil
 }
 
 func (cw *CW) Register(ctx context.Context, login string, password string, email string, real_name string) (int64, error) {

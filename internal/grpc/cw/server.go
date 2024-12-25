@@ -19,6 +19,7 @@ type CW interface {
 	ListPhotos() ([]models.Photo, error)
 	PhotosForMainScreen(ctx context.Context, dateStart string, dateEnd string) (photos []models.BetterPhoto, err error)
 	PhotosOfAutomobile(id int64) (photos []models.Photo, err error)
+	SelectAuto(userId int64, vehicleId int64, dateStart string, dateEnd string) (bookingId int64, err error)
 }
 
 type serverAPI struct {
@@ -153,6 +154,20 @@ func (s *serverAPI) ListPhotos(req *cwv1.EmptyRequest, stream cwv1.Service_ListP
 
 	s.Logger.Info("all photos sent successfully")
 	return nil
+}
+
+func (s *serverAPI) SelectAuto(ctx context.Context, req *cwv1.SelectAutoRequest) (*cwv1.SelectAutoResponse, error) {
+	s.Logger.Info("selecting auto started")
+
+	bookingID, err := s.cw.SelectAuto(req.UserId, req.VehicleId, req.StartTime, req.EndTime)
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+
+	return &cwv1.SelectAutoResponse{
+		VehicleId: bookingID,
+	}, nil
+
 }
 
 func (s *serverAPI) Login(ctx context.Context, req *cwv1.LoginRequest) (*cwv1.LoginResponse, error) {

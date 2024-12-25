@@ -97,6 +97,48 @@ func executeSQLFile(dbPool *pgxpool.Pool, filePath string) error {
 	return nil
 }
 
+func (s *Storage) SelectAuto(userId int64, vehicleId int64, dateStart string, dateEnd string) (int64, error) {
+	const op = "storage.psql.SelectAuto"
+	strId := strconv.FormatInt(userId, 10)
+	strEh := strconv.FormatInt(vehicleId, 10)
+
+	fmt.Println("!!!!!!!!!!!! " + strId + " " + strEh + " " + dateStart + " " + dateEnd)
+
+	//query := "Select book_vehicle(@p_user_id, @p_vehicle_id, @p_date_begin, @p_date_end)"
+	//args := pgx.NamedArgs{
+	//	"@p_user_id":    strId,
+	//	"@p_vehicle_id": strEh,
+	//	"@p_date_begin": dateStart,
+	//	"@p_date_end":   dateEnd,
+	//}
+
+	query := "Select book_vehicle($1, $2, $3, $4)"
+	args := []interface{}{
+		userId,
+		vehicleId,
+		dateStart,
+		dateEnd,
+	}
+
+	var bookingId int64
+	err := s.db.QueryRow(context.Background(), query, args...).Scan(&bookingId)
+	if err != nil {
+		return 0, fmt.Errorf("%s: %w", op, err)
+	}
+
+	//for rows.Next() {
+	//	err := rows.Scan(&bookingId)
+	//	if err != nil {
+	//		return 0, err
+	//	}
+	//}
+
+	fmt.Println(bookingId)
+
+	return bookingId, nil
+
+}
+
 func (s *Storage) SaveUser(ctx context.Context, login string, passHash []byte, email string, real_name string) (int64, error) {
 	const op = "storage.postgresql.SaveUser"
 

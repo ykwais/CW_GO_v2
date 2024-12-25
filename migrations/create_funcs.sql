@@ -71,7 +71,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE OR REPLACE FUNCTION book_vehicle(
+CREATE OR REPLACE FUNCTION book_vehicle( --вроде норм
     p_user_id BIGINT,
     p_vehicle_id BIGINT,
     p_date_begin DATE,
@@ -108,40 +108,6 @@ BEGIN
     RETURN v_booking_id;
 END;
 $$ LANGUAGE plpgsql;
-
---
--- CREATE OR REPLACE FUNCTION book_vehicle(
---     p_user_id BIGINT,
---     p_vehicle_id BIGINT,
---     p_date_begin DATE,
---     p_date_end DATE
--- ) RETURNS VOID AS $$
--- BEGIN
---
---     IF EXISTS (
---         SELECT 1
---         FROM bookings
---         WHERE vehicle_id = p_vehicle_id
---           AND (
---             (p_date_begin BETWEEN date_begin AND date_end)
---                 OR (p_date_end BETWEEN date_begin AND date_end)
---                 OR (date_begin BETWEEN p_date_begin AND p_date_end)
---             )
---     ) THEN
---         RAISE EXCEPTION 'Vehicle is not available for the selected dates';
---     END IF;
---
---
---     INSERT INTO bookings (user_id, vehicle_id, date_begin, date_end)
---     VALUES (p_user_id, p_vehicle_id, p_date_begin, p_date_end);
---
---
---     UPDATE vehicles
---     SET status = 'rented'
---     WHERE id = p_vehicle_id;
--- END;
--- $$ LANGUAGE plpgsql;
-
 
 
 
@@ -221,6 +187,8 @@ END;
 $$ LANGUAGE plpgsql;
 
 
+
+
 CREATE OR REPLACE FUNCTION get_vehicle_photos_table(_id BIGINT) -- вроде норм
     RETURNS TABLE(photo_url TEXT) AS $$
 BEGIN
@@ -228,5 +196,28 @@ BEGIN
         SELECT VehiclePhotos.photo_url
         FROM VehiclePhotos
         WHERE vehicle_id = _id;
+END;
+$$ LANGUAGE plpgsql;
+
+
+CREATE OR REPLACE FUNCTION get_user_bookings(p_user_id BIGINT)
+    RETURNS TABLE (
+                      brand_name VARCHAR,
+                      model_name VARCHAR,
+                      date_begin DATE,
+                      date_end DATE
+                  ) AS $$
+BEGIN
+    RETURN QUERY
+        SELECT
+            br.brand_name,
+            m.name AS model_name,
+            b.date_begin,
+            b.date_end
+        FROM bookings b
+                 JOIN vehicles v ON b.vehicle_id = v.id
+                 JOIN brands br ON v.brand_id = br.id
+                 JOIN models m ON v.model_id = m.id
+        WHERE b.user_id = p_user_id;
 END;
 $$ LANGUAGE plpgsql;
