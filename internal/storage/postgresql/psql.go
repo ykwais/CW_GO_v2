@@ -154,6 +154,32 @@ func (s *Storage) SaveUser(ctx context.Context, login string, passHash []byte, e
 
 }
 
+func (s *Storage) PhotosOfOneAutomobile(id int64) ([]models.Photo, error) {
+	const op = "storage.photosOfOneAutomobile"
+
+	query := "Select * from get_vehicle_photos_table(@id)"
+	args := pgx.NamedArgs{
+		"id": id,
+	}
+
+	rows, err := s.db.Query(context.Background(), query, args)
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+
+	var res []models.Photo
+	for rows.Next() {
+		var result models.Photo
+		err := rows.Scan(&result.Name) //тут просто путь сохраняю
+		if err != nil {
+			return nil, fmt.Errorf("%s: %w", op, err)
+		}
+		res = append(res, result)
+	}
+
+	return res, nil
+}
+
 func (s *Storage) GetAvailableCars(start_time string, end_time string) ([]models.BetterPhoto, error) {
 	const op = "storage.psql.GetAvailableCars"
 

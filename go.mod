@@ -7,7 +7,7 @@ toolchain go1.22.5
 require (
 	github.com/ilyakaznacheev/cleanenv v1.5.0
 	github.com/jackc/pgx/v5 v5.5.4
-	github.com/ykwais/CW_GO_protos v0.0.0-20241225000521-07c96ef1f7c0
+	github.com/ykwais/CW_GO_protos v0.0.0-20241225100448-d18b2482bb85
 	golang.org/x/crypto v0.31.0
 	google.golang.org/grpc v1.69.2
 )

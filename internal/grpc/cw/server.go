@@ -14,10 +14,11 @@ import (
 
 type CW interface {
 	Login(ctx context.Context, login, password string) (userId int64, err error)
-	Register(ctx context.Context, login, password, email, real_name string) (userID int64, err error)
+	Register(ctx context.Context, login, password, email, realName string) (userID int64, err error)
 
 	ListPhotos() ([]models.Photo, error)
-	PhotosForMainScreen(ctx context.Context, date_start string, date_end string) (photos []models.BetterPhoto, err error)
+	PhotosForMainScreen(ctx context.Context, dateStart string, dateEnd string) (photos []models.BetterPhoto, err error)
+	PhotosOfAutomobile(id int64) (photos []models.Photo, err error)
 }
 
 type serverAPI struct {
@@ -40,15 +41,45 @@ func RegisterServerAPI(gRPC *grpc.Server, logger *slog.Logger, service CW) {
 	и посылку ответа на клиент
 */
 
+func (s *serverAPI) PhotosOfAutomobile(req *cwv1.PhotosOfAutomobileRequest, res grpc.ServerStreamingServer[cwv1.PhotosOfAutomobileResponse]) error {
+	s.Logger.Info("photos of current automobile start")
+	combinePathData, err := s.cw.PhotosOfAutomobile(req.Id)
+	if err != nil {
+		return err
+	}
+
+	for _, photo := range combinePathData {
+		chunkSize := 1024 * 1024
+		data := photo.Data
+		for i := 0; i < len(data); i += chunkSize {
+			end := i + chunkSize
+			if end > len(data) {
+				end = len(data)
+			}
+
+			response := &cwv1.PhotosOfAutomobileResponse{
+				Chunk: data[i:end],
+			}
+
+			if err := res.Send(response); err != nil {
+				s.Logger.Error("failed to send photo chunk", err)
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
 func (s *serverAPI) PhotosForMainScreen(req *cwv1.PhotosForMainScreenRequest, res grpc.ServerStreamingServer[cwv1.PhotosForMainScreenResponse]) error {
 	s.Logger.Info("start PhotosForMainScreen")
-	combine_photo_datas, err := s.cw.PhotosForMainScreen(context.Background(), req.DateBegin, req.DateEnd)
+	combinePhotoDatas, err := s.cw.PhotosForMainScreen(context.Background(), req.DateBegin, req.DateEnd)
 	if err != nil {
 		s.Logger.Error("failed to get photos for main screen", err)
 		return err
 	}
 
-	for _, photo := range combine_photo_datas {
+	for _, photo := range combinePhotoDatas {
 		chunkSize := 1024 * 1024
 		data := photo.Data
 		for i := 0; i < len(data); i += chunkSize {

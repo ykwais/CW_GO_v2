@@ -22,6 +22,7 @@ type Service interface {
 	User(ctx context.Context, login string) (models.User, error)
 	IsAdmin(ctx context.Context, userID int64) (bool, error)
 	GetAvailableCars(start_time string, end_time string) ([]models.BetterPhoto, error)
+	PhotosOfOneAutomobile(id int64) ([]models.Photo, error)
 }
 
 var (
@@ -40,6 +41,32 @@ func New(log *slog.Logger, service Service) *CW {
 /*
 ниже представлены уже сама реализация обработки запроса, то есть мы получаем входные данные из реквеста и перенаправляем их в сущность, которая взаимодействует с бд
 */
+
+func (cw *CW) PhotosOfAutomobile(id int64) (photos []models.Photo, err error) {
+	cw.log.Info("starting inner photos of autos")
+	returnedPhotos, err := cw.srvc.PhotosOfOneAutomobile(id)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, photo := range returnedPhotos {
+		if _, err := os.Stat(photo.Name); os.IsNotExist(err) {
+			return nil, err
+		}
+		data, err := os.ReadFile(photo.Name)
+		if err != nil {
+			return nil, err
+		}
+
+		photos = append(photos, models.Photo{
+			Name: photo.Name, //тут путь
+			Data: data,
+		})
+	}
+
+	return photos, err
+}
+
 func (cw *CW) PhotosForMainScreen(ctx context.Context, data_start string, data_end string) (photos []models.BetterPhoto, err error) {
 	cw.log.Info("starting photos for main screen")
 	better_photos, err := cw.srvc.GetAvailableCars(data_start, data_end)
