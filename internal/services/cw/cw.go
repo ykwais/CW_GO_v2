@@ -21,6 +21,7 @@ type Service interface {
 	SaveUser(ctx context.Context, login string, passHash []byte, email string, real_name string) (uid int64, err error)
 	User(ctx context.Context, login string) (models.User, error)
 	IsAdmin(ctx context.Context, userID int64) (bool, error)
+	GetAvailableCars(start_time string, end_time string) ([]models.BetterPhoto, error)
 }
 
 var (
@@ -29,7 +30,7 @@ var (
 	ErrUserExists         = errors.New("user already exists")
 )
 
-func New(log *slog.Logger, service Service /*userSaver UserSaver, usrProvider UserProvider*/) *CW {
+func New(log *slog.Logger, service Service) *CW {
 	return &CW{
 		log:  log,
 		srvc: service,
@@ -39,7 +40,35 @@ func New(log *slog.Logger, service Service /*userSaver UserSaver, usrProvider Us
 /*
 ниже представлены уже сама реализация обработки запроса, то есть мы получаем входные данные из реквеста и перенаправляем их в сущность, которая взаимодействует с бд
 */
-func (cw *CW) PhotosForMainScreen(ctx context.Context, data_start string, data_end string) (photos []models.Photo, err error) {
+func (cw *CW) PhotosForMainScreen(ctx context.Context, data_start string, data_end string) (photos []models.BetterPhoto, err error) {
+	cw.log.Info("starting photos for main screen")
+	better_photos, err := cw.srvc.GetAvailableCars(data_start, data_end)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, better_photo := range better_photos {
+		if _, err := os.Stat(better_photo.Url); os.IsNotExist(err) {
+			return nil, err
+		}
+
+		data, err := os.ReadFile(better_photo.Url)
+		if err != nil {
+			return nil, err
+		}
+
+		photos = append(photos, models.BetterPhoto{
+			Data:      data,
+			Url:       better_photo.Url,
+			VehicleId: better_photo.VehicleId,
+			Model:     better_photo.Model,
+			Brand:     better_photo.Brand,
+			TotalCost: better_photo.TotalCost,
+		})
+
+	}
+
+	return photos, nil
 
 }
 

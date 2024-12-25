@@ -17,7 +17,7 @@ type CW interface {
 	Register(ctx context.Context, login, password, email, real_name string) (userID int64, err error)
 
 	ListPhotos() ([]models.Photo, error)
-	PhotosForMainScreen(ctx context.Context, date_start string, date_end string) (photos []models.Photo, err error)
+	PhotosForMainScreen(ctx context.Context, date_start string, date_end string) (photos []models.BetterPhoto, err error)
 }
 
 type serverAPI struct {
@@ -40,13 +40,40 @@ func RegisterServerAPI(gRPC *grpc.Server, logger *slog.Logger, service CW) {
 	и посылку ответа на клиент
 */
 
-func (s *serverAPI) PhotosForMainScreen(req *cwv1.PhotosForMainScreenRequest, stream cwv1.PhotosForMainScreenResponse) error {
+func (s *serverAPI) PhotosForMainScreen(req *cwv1.PhotosForMainScreenRequest, res grpc.ServerStreamingServer[cwv1.PhotosForMainScreenResponse]) error {
 	s.Logger.Info("start PhotosForMainScreen")
 	combine_photo_datas, err := s.cw.PhotosForMainScreen(context.Background(), req.DateBegin, req.DateEnd)
 	if err != nil {
 		s.Logger.Error("failed to get photos for main screen", err)
 		return err
 	}
+
+	for _, photo := range combine_photo_datas {
+		chunkSize := 1024 * 1024
+		data := photo.Data
+		for i := 0; i < len(data); i += chunkSize {
+			end := i + chunkSize
+			if end > len(data) {
+				end = len(data)
+			}
+
+			response := &cwv1.PhotosForMainScreenResponse{
+				Chunk:       data[i:end],
+				Brand:       photo.Brand,
+				Model:       photo.Model,
+				VehicleId:   photo.VehicleId,
+				PricePerDay: photo.TotalCost,
+			}
+
+			if err := res.Send(response); err != nil {
+				s.Logger.Error("failed to send photo chunk", err)
+				return err
+			}
+		}
+	}
+
+	s.Logger.Info("end PhotosForMainScreen")
+	return nil
 
 }
 

@@ -49,10 +49,10 @@ CREATE OR REPLACE FUNCTION get_available_vehicles(
 )
     RETURNS TABLE (
                       veh_id BIGINT,
-                      vehicle_type VARCHAR,
+                      --vehicle_type VARCHAR,
                       brand_name VARCHAR,
                       model_name VARCHAR,
-                      color VARCHAR,
+                      --color VARCHAR,
                       price_per_day MONEY,
                       photo_url TEXT
                   ) AS $$
@@ -60,10 +60,10 @@ BEGIN
     RETURN QUERY
         SELECT
             vd.vehicle_id,
-            vd.vehicle_type,
+            --vd.vehicle_type,
             vd.brand_name,
             vd.model_name,
-            vd.color,
+            --vd.color,
             vd.total_price_per_day,
             vd.photo_url
         FROM VehicleDetails vd

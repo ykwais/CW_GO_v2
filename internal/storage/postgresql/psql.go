@@ -3,6 +3,7 @@ package postgresql
 import (
 	"CW_DB_v2/internal/domain/models"
 	"github.com/jackc/pgx/v5"
+	"strconv"
 
 	//"github.com/jackc/pgx/v5"
 
@@ -20,6 +21,15 @@ import (
 
 type Storage struct {
 	db *pgxpool.Pool
+}
+
+type tmpStruct struct {
+	Data      []byte
+	VehicleId int64
+	Brand     string
+	Model     string
+	TotalCost string
+	Url       string
 }
 
 func New(DbConnection string) (*Storage, error) {
@@ -142,6 +152,47 @@ func (s *Storage) SaveUser(ctx context.Context, login string, passHash []byte, e
 	//
 	//return 52, nil
 
+}
+
+func (s *Storage) GetAvailableCars(start_time string, end_time string) ([]models.BetterPhoto, error) {
+	const op = "storage.psql.GetAvailableCars"
+
+	query := "Select * from get_available_vehicles(@start, @end)"
+	args := pgx.NamedArgs{
+		"start": start_time,
+		"end":   end_time,
+	}
+
+	rows, err := s.db.Query(context.Background(), query, args)
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+
+	var res []models.BetterPhoto
+	for rows.Next() {
+		var result tmpStruct
+		err := rows.Scan(&result.VehicleId, &result.Brand, &result.Model, &result.TotalCost, &result.Url)
+		if err != nil {
+			return nil, fmt.Errorf("%s: %w", op, err)
+		}
+
+		costStr := result.TotalCost
+		costStr = strings.TrimPrefix(costStr, "$")
+		totalCost, err := strconv.ParseFloat(costStr, 64) // Преобразуем в float64
+		if err != nil {
+			log.Println("failed to convert price to float", err)
+			return nil, fmt.Errorf("%s: %w", op, err)
+		}
+
+		res = append(res, models.BetterPhoto{
+			VehicleId: result.VehicleId,
+			Brand:     result.Brand,
+			Model:     result.Model,
+			TotalCost: totalCost,
+			Url:       result.Url,
+		})
+	}
+	return res, nil
 }
 
 func (s *Storage) User(ctx context.Context, login string) (models.User, error) {
