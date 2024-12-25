@@ -58,7 +58,8 @@ func (s *serverAPI) PhotosOfAutomobile(req *cwv1.PhotosOfAutomobileRequest, res 
 			}
 
 			response := &cwv1.PhotosOfAutomobileResponse{
-				Chunk: data[i:end],
+				PhotoName: photo.Name,
+				Chunk:     data[i:end],
 			}
 
 			if err := res.Send(response); err != nil {
