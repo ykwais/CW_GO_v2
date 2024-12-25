@@ -23,7 +23,7 @@ type Storage struct {
 	db *pgxpool.Pool
 }
 
-type tmpStruct struct {
+type CanMoney struct {
 	Data      []byte
 	VehicleId int64
 	Brand     string
@@ -170,7 +170,7 @@ func (s *Storage) GetAvailableCars(start_time string, end_time string) ([]models
 
 	var res []models.BetterPhoto
 	for rows.Next() {
-		var result tmpStruct
+		var result CanMoney
 		err := rows.Scan(&result.VehicleId, &result.Brand, &result.Model, &result.TotalCost, &result.Url)
 		if err != nil {
 			return nil, fmt.Errorf("%s: %w", op, err)

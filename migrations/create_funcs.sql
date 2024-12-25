@@ -49,10 +49,8 @@ CREATE OR REPLACE FUNCTION get_available_vehicles(
 )
     RETURNS TABLE (
                       veh_id BIGINT,
-                      --vehicle_type VARCHAR,
                       brand_name VARCHAR,
                       model_name VARCHAR,
-                      --color VARCHAR,
                       price_per_day MONEY,
                       photo_url TEXT
                   ) AS $$
@@ -60,10 +58,8 @@ BEGIN
     RETURN QUERY
         SELECT
             vd.vehicle_id,
-            --vd.vehicle_type,
             vd.brand_name,
             vd.model_name,
-            --vd.color,
             vd.total_price_per_day,
             vd.photo_url
         FROM VehicleDetails vd
@@ -185,5 +181,16 @@ BEGIN
 
     INSERT INTO ActionLogs (user_id, action_type, details)
     VALUES (p_user_id, 'deletion', 'User deleted along with their bookings.');
+END;
+$$ LANGUAGE plpgsql;
+
+
+CREATE OR REPLACE FUNCTION get_vehicle_photos_table(_id BIGINT)
+    RETURNS TABLE(photo_url TEXT) AS $$
+BEGIN
+    RETURN QUERY
+        SELECT VehiclePhotos.photo_url
+        FROM VehiclePhotos
+        WHERE vehicle_id = _id;
 END;
 $$ LANGUAGE plpgsql;

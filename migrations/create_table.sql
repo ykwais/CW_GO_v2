@@ -9,14 +9,6 @@ CREATE TABLE if not exists users (
                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- DO $$
---     BEGIN
---     IF (SELECT COUNT(*) FROM Users) = 0 THEN
---         COPY Users (login, password_hash)
---             FROM '/data_for_lab_2/test_copy/users.csv'
---             WITH (FORMAT csv, HEADER true);
---     END IF;
--- END $$;
 
 CREATE TABLE if not exists ActionLogs (
                             id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
