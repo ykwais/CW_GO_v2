@@ -23,6 +23,7 @@ type CW interface {
 	GetUserBookings(userId int64) ([]models.UserBooking, error)
 	CancelBooking(userId int64, vehicleId int64) (bool, error)
 	GetDataForAdmin() ([]models.AdminData, error)
+	GetUsersForAdmin() ([]models.BetterUser, error)
 }
 
 type serverAPI struct {
@@ -56,6 +57,34 @@ func (s *serverAPI) CancelBooking(ctx context.Context, req *cwv1.CancelBookingRe
 		Result: res,
 	}, nil
 
+}
+
+func (s *serverAPI) GetUsersForAdmin(ctx context.Context, req *cwv1.GetUsersForAdminRequest) (*cwv1.GetUsersForAdminResponse, error) {
+	s.Logger.Info("GetUsersForAdmin called")
+
+	users, err := s.cw.GetUsersForAdmin()
+	if err != nil {
+		return nil, err
+	}
+
+	var infoUsers []*cwv1.DataUsersForAdmin
+	for _, user := range users {
+		infoUser := &cwv1.DataUsersForAdmin{
+			UserId:        user.UserId,
+			Login:         user.Login,
+			Email:         user.Email,
+			RealName:      user.RealName,
+			CreatedAt:     user.CreatedAt,
+			TotalBookings: user.TotalBookings,
+		}
+		infoUsers = append(infoUsers, infoUser)
+	}
+
+	response := &cwv1.GetUsersForAdminResponse{
+		DataUsers: infoUsers,
+	}
+
+	return response, nil
 }
 
 func (s *serverAPI) GetDataForAdmin(ctx context.Context, req *cwv1.GetDataForAdminRequest) (*cwv1.GetDataForAdminResponse, error) {

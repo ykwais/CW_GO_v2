@@ -252,6 +252,32 @@ func (s *Storage) PhotosOfOneAutomobile(id int64) ([]models.Photo, error) {
 	return res, nil
 }
 
+func (s *Storage) GetUsersForAdmin() (result []models.BetterUser, err error) {
+	const op = "storage.psql.GetUsersForAdmin"
+
+	query := "Select * from get_user_details()"
+	rows, err := s.db.Query(context.Background(), query)
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+
+	for rows.Next() {
+		var res models.BetterUser
+		var creation time.Time
+
+		err := rows.Scan(&res.UserId, &res.Login, &res.Email, &res.RealName, &creation, &res.TotalBookings)
+		if err != nil {
+			return nil, fmt.Errorf("%s: %w", op, err)
+		}
+
+		res.CreatedAt = creation.Format("2006-01-02 15:04:05")
+
+		result = append(result, res)
+
+	}
+	return result, nil
+}
+
 func (s *Storage) GetDataForAdmin() (result []models.AdminData, err error) {
 	const op = "storage.psql.GetDataForAdmin"
 

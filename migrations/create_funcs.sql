@@ -225,7 +225,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 
-CREATE OR REPLACE FUNCTION get_admin_overview()
+CREATE OR REPLACE FUNCTION get_admin_overview() -- вроде ок
     RETURNS TABLE (
                       login VARCHAR(50),
                       user_email VARCHAR(100),
@@ -242,7 +242,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 
-CREATE OR REPLACE FUNCTION get_user_details()
+CREATE OR REPLACE FUNCTION get_user_details() --вроде ок
     RETURNS TABLE (
                       user_id BIGINT,
                       username VARCHAR(50),
