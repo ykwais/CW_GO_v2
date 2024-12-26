@@ -224,24 +224,6 @@ func (s *Storage) SaveUser(ctx context.Context, login string, passHash []byte, e
 
 	return result.id, result.err
 
-	//query := "SELECT register_client(@user_name, @pass_hash)"
-	//args := pgx.NamedArgs{
-	//	"user_name": login,
-	//	"pass_hash": passHash,
-	//}
-	//
-	//_, err := s.db.Exec(ctx, query, args)
-	//if err != nil {
-	//	return 0, fmt.Errorf("%s : %w", op, err)
-	//}
-	//
-	////id, err := res.lastIndex()
-	////if err != nil {
-	////	return 0, fmt.Errorf("%s : %w", op, err)
-	////}
-	//
-	//return 52, nil
-
 }
 
 func (s *Storage) PhotosOfOneAutomobile(id int64) ([]models.Photo, error) {
@@ -268,6 +250,42 @@ func (s *Storage) PhotosOfOneAutomobile(id int64) ([]models.Photo, error) {
 	}
 
 	return res, nil
+}
+
+func (s *Storage) GetDataForAdmin() (result []models.AdminData, err error) {
+	const op = "storage.psql.GetDataForAdmin"
+
+	query := "Select * from get_admin_overview()"
+	rows, err := s.db.Query(context.Background(), query)
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+
+	for rows.Next() {
+		var res models.AdminData
+		var start time.Time
+		var end time.Time
+		var tmp_cost string
+		err := rows.Scan(&res.Login, &res.Email, &res.RealName, &res.Brand, &res.Model, &start, &end, &tmp_cost)
+		if err != nil {
+			return nil, fmt.Errorf("%s: %w", op, err)
+		}
+
+		costStr := tmp_cost
+		costStr = strings.TrimPrefix(costStr, "$")
+		totalCost, err := strconv.ParseFloat(costStr, 64)
+		if err != nil {
+			return nil, fmt.Errorf("%s: %w", op, err)
+		}
+
+		res.StartTime = start.Format("2006-01-02")
+		res.EndTime = end.Format("2006-01-02")
+		res.PricePerDay = totalCost
+
+		result = append(result, res)
+
+	}
+	return result, nil
 }
 
 func (s *Storage) GetAvailableCars(start_time string, end_time string) ([]models.BetterPhoto, error) {
@@ -359,25 +377,6 @@ func (s *Storage) User(ctx context.Context, login string) (models.User, error) {
 
 	return result.user, result.err
 
-	//query := "SELECT * from login_user(@login)"
-	//args := pgx.NamedArgs{
-	//	"login": login,
-	//}
-	//
-	//rows, err := s.db.Query(ctx, query, args)
-	//if err != nil {
-	//	return models.User{}, fmt.Errorf("%s : %w", op, err)
-	//}
-	//
-	//var user models.User
-	//for rows.Next() {
-	//	err := rows.Scan(&user.ID, &user.Login, &user.Pass_hash)
-	//	if err != nil {
-	//		return models.User{}, fmt.Errorf("%s : %w", op, err)
-	//	}
-	//}
-	//
-	//return user, nil
 }
 
 func (s *Storage) IsAdmin(ctx context.Context, userID int64) (bool, error) {

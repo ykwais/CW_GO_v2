@@ -22,6 +22,7 @@ type CW interface {
 	SelectAuto(userId int64, vehicleId int64, dateStart string, dateEnd string) (bookingId int64, err error)
 	GetUserBookings(userId int64) ([]models.UserBooking, error)
 	CancelBooking(userId int64, vehicleId int64) (bool, error)
+	GetDataForAdmin() ([]models.AdminData, error)
 }
 
 type serverAPI struct {
@@ -54,6 +55,37 @@ func (s *serverAPI) CancelBooking(ctx context.Context, req *cwv1.CancelBookingRe
 	return &cwv1.CancelBookingResponse{
 		Result: res,
 	}, nil
+
+}
+
+func (s *serverAPI) GetDataForAdmin(ctx context.Context, req *cwv1.GetDataForAdminRequest) (*cwv1.GetDataForAdminResponse, error) {
+	s.Logger.Info("GetDataForAdmin called")
+
+	infos, err := s.cw.GetDataForAdmin()
+	if err != nil {
+		return nil, err
+	}
+
+	var infoAdmins []*cwv1.DataForAdmin
+	for _, info := range infos {
+		infoAdmin := &cwv1.DataForAdmin{
+			Login:       info.Login,
+			UserEmail:   info.Email,
+			RealName:    info.RealName,
+			Brand:       info.Brand,
+			Model:       info.Model,
+			DataStart:   info.StartTime,
+			DataEnd:     info.EndTime,
+			PricePerDay: info.PricePerDay,
+		}
+		infoAdmins = append(infoAdmins, infoAdmin)
+	}
+
+	response := &cwv1.GetDataForAdminResponse{
+		DataForAdmin: infoAdmins,
+	}
+
+	return response, nil
 
 }
 

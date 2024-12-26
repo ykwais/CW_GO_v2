@@ -26,6 +26,7 @@ type Service interface {
 	SelectAuto(userId int64, vehicleId int64, dateStart string, dateEnd string) (bookingId int64, err error)
 	GetUserBookings(userId int64) ([]models.UserBooking, error)
 	CancelBooking(userId int64, vehicleId int64) (bool, error)
+	GetDataForAdmin() ([]models.AdminData, error)
 }
 
 var (
@@ -52,6 +53,15 @@ func (cw *CW) CancelBooking(userId int64, vehicleId int64) (bool, error) {
 		return false, err
 	}
 	return res, nil
+}
+
+func (cw *CW) GetDataForAdmin() ([]models.AdminData, error) {
+	cw.log.Info("get data for admin start")
+	infos, err := cw.srvc.GetDataForAdmin()
+	if err != nil {
+		return nil, err
+	}
+	return infos, nil
 }
 
 func (cw *CW) GetUserBookings(userId int64) ([]models.UserBooking, error) {
