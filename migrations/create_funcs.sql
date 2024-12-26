@@ -111,7 +111,7 @@ $$ LANGUAGE plpgsql;
 
 
 
-CREATE OR REPLACE FUNCTION cancel_booking(--
+CREATE OR REPLACE FUNCTION cancel_booking(--вроде ок
     p_user_id BIGINT,
     p_vehicle_id BIGINT
 ) RETURNS VOID AS $$
@@ -160,7 +160,7 @@ $$ LANGUAGE plpgsql;
 
 
 
-CREATE OR REPLACE FUNCTION delete_user(p_user_id BIGINT)
+CREATE OR REPLACE FUNCTION delete_user(p_user_id BIGINT)--
     RETURNS VOID AS $$
 BEGIN
 
@@ -221,5 +221,37 @@ BEGIN
                  JOIN brands br ON v.brand_id = br.id
                  JOIN models m ON v.model_id = m.id
         WHERE b.user_id = p_user_id;
+END;
+$$ LANGUAGE plpgsql;
+
+
+CREATE OR REPLACE FUNCTION get_admin_overview()
+    RETURNS TABLE (
+                      login VARCHAR(50),
+                      user_email VARCHAR(100),
+                      user_real_name VARCHAR(100),
+                      brand_name VARCHAR(50),
+                      model_name VARCHAR(50),
+                      booking_start_date Date,
+                      booking_end_date Date,
+                      total_price_per_day money
+                  ) AS $$
+BEGIN
+    RETURN QUERY SELECT * FROM AdminOverview;
+END;
+$$ LANGUAGE plpgsql;
+
+
+CREATE OR REPLACE FUNCTION get_user_details()
+    RETURNS TABLE (
+                      user_id BIGINT,
+                      username VARCHAR(50),
+                      email VARCHAR(100),
+                      real_name VARCHAR(50),
+                      created_at TIMESTAMP,
+                      total_bookings BIGINT
+                  ) AS $$
+BEGIN
+    RETURN QUERY SELECT * FROM UserDetails;
 END;
 $$ LANGUAGE plpgsql;
