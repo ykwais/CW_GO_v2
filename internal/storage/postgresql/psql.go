@@ -115,7 +115,7 @@ func (s *Storage) GetUserBookings(userId int64) ([]models.UserBooking, error) {
 		var current models.UserBooking
 		var start time.Time
 		var end time.Time
-		err := rows.Scan(&current.Brand, &current.Model, &start, &end)
+		err := rows.Scan(&current.VehicleID, &current.Brand, &current.Model, &start, &end)
 		if err != nil {
 			return nil, fmt.Errorf("%s: %w", op, err)
 		}

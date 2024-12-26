@@ -54,6 +54,7 @@ func (s *serverAPI) GetUserBookings(ctx context.Context, req *cwv1.UserBookingsR
 	var bookingInfos []*cwv1.BookingInfo
 	for _, booking := range bookings {
 		bookingInfo := &cwv1.BookingInfo{
+			VehicleId: booking.VehicleID,
 			BrandName: booking.Brand,
 			ModelName: booking.Model,
 			DateBegin: booking.StartDate,

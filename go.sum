@@ -45,6 +45,8 @@ github.com/ykwais/CW_GO_protos v1.0.0 h1:Ge8c01MUZrNb4WGexYzoNo3oZq9o7mIhWkdVnqz
 github.com/ykwais/CW_GO_protos v1.0.0/go.mod h1:h4Z8WWGFRxHyi8ZHcxmCS50e4TMNlDqxuBNaiNwCJ2w=
 github.com/ykwais/CW_GO_protos v1.0.1 h1:8dFubiXVg+G5gmgGR15pHD08/IMHSQa2KlJmZSrd960=
 github.com/ykwais/CW_GO_protos v1.0.1/go.mod h1:h4Z8WWGFRxHyi8ZHcxmCS50e4TMNlDqxuBNaiNwCJ2w=
+github.com/ykwais/CW_GO_protos v1.0.2 h1:8aC5F7H7CDXrCgyUYqjiAtAjIr2z1h4UqU2X7F4T9qI=
+github.com/ykwais/CW_GO_protos v1.0.2/go.mod h1:h4Z8WWGFRxHyi8ZHcxmCS50e4TMNlDqxuBNaiNwCJ2w=
 go.opentelemetry.io/otel v1.31.0 h1:NsJcKPIW0D0H3NgzPDHmo0WW6SptzPdqg/L1zsIm2hY=
 go.opentelemetry.io/otel v1.31.0/go.mod h1:O0C14Yl9FgkjqcCZAsE053C13OaddMYr/hz6clDkEJE=
 go.opentelemetry.io/otel/metric v1.31.0 h1:FSErL0ATQAmYHUIzSezZibnyVlft1ybhy4ozRPcF2fE=
