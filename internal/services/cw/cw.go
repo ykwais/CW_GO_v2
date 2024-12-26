@@ -28,6 +28,7 @@ type Service interface {
 	CancelBooking(userId int64, vehicleId int64) (bool, error)
 	GetDataForAdmin() ([]models.AdminData, error)
 	GetUsersForAdmin() ([]models.BetterUser, error)
+	DeleteUser(id int64) (bool, error)
 }
 
 var (
@@ -46,6 +47,15 @@ func New(log *slog.Logger, service Service) *CW {
 /*
 ниже представлены уже сама реализация обработки запроса, то есть мы получаем входные данные из реквеста и перенаправляем их в сущность, которая взаимодействует с бд
 */
+
+func (cw *CW) DeleteUser(userId int64) (bool, error) {
+	cw.log.Info("DeleteUser")
+	res, err := cw.srvc.DeleteUser(userId)
+	if err != nil {
+		return false, err
+	}
+	return res, nil
+}
 
 func (cw *CW) CancelBooking(userId int64, vehicleId int64) (bool, error) {
 	cw.log.Info("cancel booking start")

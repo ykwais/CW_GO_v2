@@ -24,6 +24,7 @@ type CW interface {
 	CancelBooking(userId int64, vehicleId int64) (bool, error)
 	GetDataForAdmin() ([]models.AdminData, error)
 	GetUsersForAdmin() ([]models.BetterUser, error)
+	DeleteUser(id int64) (bool, error)
 }
 
 type serverAPI struct {
@@ -45,6 +46,18 @@ func RegisterServerAPI(gRPC *grpc.Server, logger *slog.Logger, service CW) {
 	ниже представлены обработчики запросов, поступающие на сервер. Каждый из обработчиков отвечает за валидацию, вызов реализации метода - Login например
 	и посылку ответа на клиент
 */
+
+func (s *serverAPI) DeleteUser(ctx context.Context, req *cwv1.DeleteUserRequest) (*cwv1.DeleteUserResponse, error) {
+	s.Logger.Info("DeleteUser called")
+
+	res, err := s.cw.DeleteUser(req.UserId)
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+	return &cwv1.DeleteUserResponse{
+		Result: res,
+	}, nil
+}
 
 func (s *serverAPI) CancelBooking(ctx context.Context, req *cwv1.CancelBookingRequest) (*cwv1.CancelBookingResponse, error) {
 	s.Logger.Info("CancelBooking called")

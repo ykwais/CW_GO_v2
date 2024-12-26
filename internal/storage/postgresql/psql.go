@@ -98,6 +98,20 @@ func executeSQLFile(dbPool *pgxpool.Pool, filePath string) error {
 	return nil
 }
 
+func (s *Storage) DeleteUser(id int64) (bool, error) {
+	const op = "storage.psql.DeleteUser"
+
+	query := "Select delete_user($1)"
+	args := []interface{}{id}
+
+	_, err := s.db.Exec(context.Background(), query, args...)
+	if err != nil {
+		return false, fmt.Errorf("%s: %w", op, err)
+	}
+	return true, nil
+
+}
+
 func (s *Storage) CancelBooking(userId int64, vehicleId int64) (bool, error) {
 	const op = "storage.psql.CancelBooking"
 
