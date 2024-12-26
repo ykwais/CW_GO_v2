@@ -211,7 +211,7 @@ CREATE OR REPLACE FUNCTION get_user_bookings(p_user_id BIGINT)--вроде ок
 BEGIN
     RETURN QUERY
         SELECT
-            b.id As vehicle_id,
+            b.vehicle_id As vehicle_id,
             br.brand_name,
             m.name AS model_name,
             b.date_begin,
