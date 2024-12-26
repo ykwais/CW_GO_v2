@@ -5,11 +5,14 @@ import (
 	"CW_DB_v2/internal/services/cw"
 	"context"
 	"errors"
+	"fmt"
 	cwv1 "github.com/ykwais/CW_GO_protos/gen/go/cw"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"log/slog"
+	"os"
+	"os/exec"
 )
 
 type CW interface {
@@ -46,6 +49,74 @@ func RegisterServerAPI(gRPC *grpc.Server, logger *slog.Logger, service CW) {
 	ниже представлены обработчики запросов, поступающие на сервер. Каждый из обработчиков отвечает за валидацию, вызов реализации метода - Login например
 	и посылку ответа на клиент
 */
+
+func (s *serverAPI) DoBackUp(ctx context.Context, req *cwv1.DoBackUpRequest) (*cwv1.DoBackUpResponse, error) {
+	dbName := "afdb"
+	user := "ykwais"
+	backupFile := "C:\\Users\\fedor\\GolandProjects\\CW_DB_v2\\storage\\backup.sql"
+	containerID := "my_postgres_container"
+
+	cmd := exec.Command(
+		"docker", "exec", containerID, "pg_dump", "-U", user, "-F", "c", "-b", "-v", "-f", "/backup/backup.sql", dbName,
+	)
+
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	// Запускаем команду
+	if err := cmd.Run(); err != nil {
+		fmt.Println("Ошибка при резервном копировании:", err)
+		return nil, err
+	}
+
+	copyCmd := exec.Command("docker", "cp", containerID+":/backup/backup.sql", backupFile)
+	copyCmd.Stdout = os.Stdout
+	copyCmd.Stderr = os.Stderr
+
+	if err := copyCmd.Run(); err != nil {
+		fmt.Println("Ошибка при копировании файла резервной копии:", err)
+		return nil, err
+	}
+
+	fmt.Println("Резервная копия успешно создана:", backupFile)
+	return &cwv1.DoBackUpResponse{}, nil
+}
+
+func (s *serverAPI) DoRollBack(ctx context.Context, req *cwv1.DoRollBackRequest) (*cwv1.DoRollBackResponse, error) {
+	dbName := "afdb"
+	user := "ykwais"
+	backupFile := "C:\\Users\\fedor\\GolandProjects\\CW_DB_v2\\storage\\backup.sql"
+	containerID := "my_postgres_container"
+
+	if _, err := os.Stat(backupFile); os.IsNotExist(err) {
+		fmt.Println("Файл резервной копии не найден:", backupFile)
+		return nil, fmt.Errorf("backup file not found at %s", backupFile)
+	}
+
+	copyCmd := exec.Command("docker", "cp", backupFile, containerID+":/backup/backup.sql")
+	copyCmd.Stdout = os.Stdout
+	copyCmd.Stderr = os.Stderr
+
+	if err := copyCmd.Run(); err != nil {
+		fmt.Println("Ошибка при копировании файла резервной копии в контейнер:", err)
+		return nil, err
+	}
+
+	restoreCmd := exec.Command(
+		"docker", "exec", containerID, "pg_restore", "-U", user, "-d", dbName, "--clean", "-v", "/backup/backup.sql",
+	)
+
+	restoreCmd.Stdout = os.Stdout
+	restoreCmd.Stderr = os.Stderr
+
+	if err := restoreCmd.Run(); err != nil {
+		fmt.Println("Ошибка при восстановлении базы данных:", err)
+		return nil, err
+	}
+
+	fmt.Println("База данных успешно восстановлена из резервной копии.")
+	return &cwv1.DoRollBackResponse{}, nil
+}
 
 func (s *serverAPI) DeleteUser(ctx context.Context, req *cwv1.DeleteUserRequest) (*cwv1.DeleteUserResponse, error) {
 	s.Logger.Info("DeleteUser called")
