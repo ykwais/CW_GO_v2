@@ -21,6 +21,7 @@ type CW interface {
 	PhotosOfAutomobile(id int64) (photos []models.Photo, err error)
 	SelectAuto(userId int64, vehicleId int64, dateStart string, dateEnd string) (bookingId int64, err error)
 	GetUserBookings(userId int64) ([]models.UserBooking, error)
+	CancelBooking(userId int64, vehicleId int64) (bool, error)
 }
 
 type serverAPI struct {
@@ -42,6 +43,19 @@ func RegisterServerAPI(gRPC *grpc.Server, logger *slog.Logger, service CW) {
 	ниже представлены обработчики запросов, поступающие на сервер. Каждый из обработчиков отвечает за валидацию, вызов реализации метода - Login например
 	и посылку ответа на клиент
 */
+
+func (s *serverAPI) CancelBooking(ctx context.Context, req *cwv1.CancelBookingRequest) (*cwv1.CancelBookingResponse, error) {
+	s.Logger.Info("CancelBooking called")
+
+	res, err := s.cw.CancelBooking(req.UserId, req.VehicleId)
+	if err != nil {
+		return nil, err
+	}
+	return &cwv1.CancelBookingResponse{
+		Result: res,
+	}, nil
+
+}
 
 func (s *serverAPI) GetUserBookings(ctx context.Context, req *cwv1.UserBookingsRequest) (*cwv1.UserBookingsResponse, error) {
 	s.Logger.Info("GetUserBookings called")

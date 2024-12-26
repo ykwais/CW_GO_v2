@@ -25,6 +25,7 @@ type Service interface {
 	PhotosOfOneAutomobile(id int64) ([]models.Photo, error)
 	SelectAuto(userId int64, vehicleId int64, dateStart string, dateEnd string) (bookingId int64, err error)
 	GetUserBookings(userId int64) ([]models.UserBooking, error)
+	CancelBooking(userId int64, vehicleId int64) (bool, error)
 }
 
 var (
@@ -43,6 +44,15 @@ func New(log *slog.Logger, service Service) *CW {
 /*
 ниже представлены уже сама реализация обработки запроса, то есть мы получаем входные данные из реквеста и перенаправляем их в сущность, которая взаимодействует с бд
 */
+
+func (cw *CW) CancelBooking(userId int64, vehicleId int64) (bool, error) {
+	cw.log.Info("cancel booking start")
+	res, err := cw.srvc.CancelBooking(userId, vehicleId)
+	if err != nil {
+		return false, err
+	}
+	return res, nil
+}
 
 func (cw *CW) GetUserBookings(userId int64) ([]models.UserBooking, error) {
 	cw.log.Info("get user bookings for userId=%d", userId)
